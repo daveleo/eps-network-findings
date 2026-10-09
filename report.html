@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPS Network Investigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: long-form report, one reading column; wide tables scroll inside their own box */
+:root {
+  --bg: #f6f7f7; --surface: #ffffff; --fg: #1b2326; --muted: #5a666b; --rule: #d9dfe1; --accent: #1d6b73;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #12181a; --surface: #192124; --fg: #e3e8e9; --muted: #98a5aa; --rule: #2c373b; --accent: #6cc0c8; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #12181a; --surface: #192124; --fg: #e3e8e9; --muted: #98a5aa; --rule: #2c373b; --accent: #6cc0c8; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.65 var(--font-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 72px; }
+h1 { font: 600 2.3rem/1.15 var(--font-head); margin: 0 0 12px; text-wrap: balance; }
+h2 { font: 600 1.6rem/1.2 var(--font-head); margin: 44px 0 12px; padding-top: 14px; border-top: 2px solid var(--fg); text-wrap: balance; }
+h3 { font: 600 1.15rem/1.3 var(--font-head); margin: 28px 0 8px; color: var(--accent); }
+p, li { max-width: 74ch; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 14px; padding-left: 1.3em; }
+li { margin: 4px 0; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 24px 0; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--surface); border: 1px solid var(--rule); padding: 1px 4px; border-radius: 3px; }
+pre { background: var(--surface); border: 1px solid var(--rule); padding: 12px 14px; overflow-x: auto; font: 13px/1.5 var(--font-mono); }
+pre code { border: 0; padding: 0; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); margin: 8px 0 18px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 11px; border-bottom: 1px solid var(--rule); }
+th { font: 600 12px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td { font-variant-numeric: tabular-nums; }
+strong { font-weight: 600; }
+a { color: var(--accent); }
+@media (max-width: 520px) { h1 { font-size: 1.85rem; } .wrap { padding-inline: 16px; } }
+</style>
+<style>body{margin:0}nav a{color:var(--accent)}</style>
+</head>
+<body>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
+<div class="wrap">
+<h1>EPS network failures: investigation report</h1>
+<p><strong>Expromo EPS power sequencer (Keyestudio KS0304: ATmega328P + WIZnet W5500), firmware v2.2 vs v3.0</strong>
+Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code> · Status as of 2026-10-09 evening</p>
+<hr />
+<h2>1. Summary</h2>
+<p>Units in the field drop off the network at random: no ping, no web page, no TCP control, until power is cycled. No failed unit has been examined in its failed state. Field units are usually set to a static IP; some AV networks have a DHCP server, sometimes not.</p>
+<p>On the bench (two bare KS0304 boards on USB power, and since 2026-10-09 afternoon a real EPS box with its 10 V supply, six SSRs and the 22 µF reset capacitor; NETGEAR M4250 switch, a model with field failures):</p>
+<ol>
+<li><strong>The field symptom means the W5500 is not answering at all.</strong> The chip answers ping and ARP by itself. v2.2's socket starvation leaves ping working, so it can't be the field failure on its own.</li>
+<li><strong>Three mechanisms reproduce the full symptom on v2.2:</strong><ul>
+<li><strong>(a) DHCP mode: a DHCP outage strands the unit until it is power-cycled</strong> (measured with the M4250's DHCP server, §5.20). One unanswered renewal makes v2.2 restart itself: the Ethernet library's DHCP loop blocks longer than v2.2's 8 s watchdog. If the server doesn't answer within 60 s of that restart, v2.2 falls back to its static address and <strong>never asks again</strong>; with the server back it stays unreachable (link up, still transmitting) until restarted. A power cycle brought it back in 13 s. With this server v2.2 also restarted itself every ~4 min while the server was up. <strong>v3.0 recovered by itself in every case.</strong> Applies only to units in DHCP mode.</li>
+<li><strong>(b) The W5500 loses its settings</strong> (the effect of a supply dip or ESD, reproduced by one register write): v2.2 dead until reset (4/4); v3.0 recovers in 3–6 s (5/5). The real trigger is untested: no real loads switched yet; mains cuts of 0.2–10 s on the real box caused nothing (18/18).</li>
+<li><strong>(c) The W5500 goes deaf after a fresh link negotiation</strong>: link up, transmits, receives nothing, registers correct. On one board (unit 2): 4 in ≥ 536 resets and 1 in 134 switch-port flaps; once it cleared by itself after 97 s. <strong>Whether it can last until a power cycle is unknown</strong>: earlier tests always reset the unit after 60 s.</li>
+</ul>
+</li>
+<li><strong>Static-mode field failures are not explained yet.</strong> IP address conflicts are excluded (field knowledge). Remaining candidates: (b) triggered by load switching, and (c).</li>
+<li><strong>v2.2 also has network defects of its own</strong> that cause partial failures (two idle connections block the control port while ping works; the web page blocks control for ~0.9 s; the stall watchdog can't see either). Part of this is the <strong>Arduino Ethernet library</strong> itself, which also <strong>writes its retry settings to W5100 register addresses on the W5500</strong> (RTR = 72 ms, RCR = 8 instead of 200 ms × 2; §5.19).</li>
+<li><strong>v3.0</strong>, a rewrite of the network layer, beats v2.2 on every pre-registered criterion except one lost ping, recovers from (a) and (b), and kept its lease through every DHCP event. <strong>It is not field-proven</strong> and has not yet run on a box with real loads.</li>
+<li><strong>Corrections made on 2026-10-09</strong> (§5.17–5.19): a USB/DTR reset also resets the W5500 (its link renegotiates), so the deaf start-ups followed a W5500 hardware reset, not a CPU-only restart; the H4c rationale ("v2.2 never resets the PHY") is void; v2.2's own watchdog restarts never produced a deaf state (0 in 19+). Finding #7 (retransmission "3 tries, ~1.4 s") was wrong because of the library defect.</li>
+</ol>
+<hr />
+<h2>2. Background</h2>
+<ul>
+<li><strong>Product:</strong> Expromo EPS: six sequenced outputs (A0–A5, zero-cross SSRs) for LED display power, TCP control on port 5000, web page on port 80, inputs D5 (maintained), D6 (toggle), D9 (factory reset), RGB status LED on D2–D4.</li>
+<li><strong>Field firmware:</strong> v2.2 (<code>Expromo_EPS_v2_2/</code>), built on the Arduino Ethernet library 2.0.2. Older: v2.1.0 (6 ch) and v1.9.1 (6 ch, also a 10-ch variant in the field whose source isn't available).</li>
+<li><strong>Reported failure:</strong> a unit becomes unreachable at random: no web UI, no ping, no TCP commands, in static and DHCP mode. A reboot (power cycle) brings it back. Earlier theories (Cisco enterprise networks, EEE, the unit not announcing itself) had no supporting evidence.</li>
+<li><strong>MACs:</strong> Expromo owns the IEEE MA-S block <code>8C:1F:64:C3:9</code> (<code>8C:1F:64:C3:90:00</code>–<code>9F:FF</code>) and assigns one MAC per produced unit, never reused.</li>
+<li><strong>Controllers in use:</strong> Bitfocus Companion (module <code>companion-eps</code>), eXcontrol v0.3.1, Crestron, Q-SYS, the web page.</li>
+</ul>
+<hr />
+<h2>3. Materials</h2>
+<h3>3.1 Units</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Unit 1</th>
+<th>Unit 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Origin</td>
+<td>the original showroom test unit (was <code>172.22.40.21</code>, label <code>EPS_Test</code>)</td>
+<td>new, unflashed on arrival</td>
+</tr>
+<tr>
+<td>USB (programming, serial, reset)</td>
+<td>COM5</td>
+<td>COM6</td>
+</tr>
+<tr>
+<td>IP now</td>
+<td><code>192.168.0.94</code> static</td>
+<td><code>192.168.0.93</code> static</td>
+</tr>
+<tr>
+<td>MAC now</td>
+<td><code>8C:1F:64:C3:90:24</code> (assigned; the MAC in the v2.2 sketch, assumed to be this unit's)</td>
+<td><code>02:45:50:A3:4E:D9</code> (temporary, generated)</td>
+</tr>
+<tr>
+<td>Label</td>
+<td><code>EPS_Test</code></td>
+<td><code>EPS_Test_2</code></td>
+</tr>
+<tr>
+<td>Firmware now</td>
+<td>v3.0 production</td>
+<td>v3.0 production</td>
+</tr>
+<tr>
+<td>M4250 switch port</td>
+<td>0/6</td>
+<td>0/12</td>
+</tr>
+</tbody>
+</table></div>
+<p>Both boards are USB-powered from the PC; nothing is connected to the outputs.</p>
+<p><strong>Unit 3 (from 2026-10-09 ~12:30): a real EPS box</strong> as built for the field (photos in <code>photos/EPS 6 channel workshop built/</code>): KS0304 with v2.2, 10 V DIN PSU (1.8 A) soldered to the barrel jack, six KANE KSSR-14840DA SSRs on A0–A5, illuminated push-button on D2–D4 (RGB) and D6, <strong>22 µF between RESET and GND</strong> (added because the 10 V PSU didn't restart the board reliably; it also blocks USB flashing). MAC <code>8C:1F:64:C3:90:58</code>, M4250 port 0/9, USB unplugged, mains switched by a <strong>Netio PowerBOX 4KF</strong> (output 4, URL API). No loads on the outputs. Afternoon changes: unit 2 moved to 192.168.0.95; units 1–2 ran the v2.2 diagnostic builds, unit 1 v3.0 from ~15:15.</p>
+<h3>3.2 Network setups (chronological)</h3>
+<ol>
+<li><strong>Direct cable, "NovaHub"</strong> (generic USB2.0 10/100 adapter) → found to make the board deaf at 100 Mbps (§5.1); dropped.</li>
+<li><strong>Direct cable, "LargeHUB"</strong> (ASIX USB gigabit adapter), PC <code>172.22.40.66</code>, later <code>192.168.0.83</code>.</li>
+<li><strong>Ubiquiti 5-port switch</strong> connecting LargeHUB and both units; isolated from the office network (the office is on a separate NIC, no bridging, no IP forwarding, no connection sharing; checked).</li>
+<li><strong>Windows Internet Connection Sharing</strong> on LargeHUB for one DHCP session (<code>192.168.137.0/24</code>), then removed.</li>
+<li><strong>M4250 changes during the tests (running config only, never saved):</strong> port shutdown/no shutdown, a port mirror 0/12 → 0/20 (~13:55–15:15), the switch's own DHCP server (pool 192.168.0.100–.150, 2-min lease, from 15:17). An accidental EEE enable on 0/6 (CLI help query) was undone before any test.</li>
+<li><strong>NETGEAR M4250-26G4XF-PoE+</strong> (firmware 13.0.4.14), a model on which the failure occurred in the field. PC on port 0/1 (<code>192.168.0.66</code>), units on 0/6 and 0/12, switch management <code>192.168.0.250</code>. Isolated. EEE and Energy-Detect off on all ports, RSTP (802.1w) on, BPDU guard off, clock not set (shows May 2023).</li>
+</ol>
+<h3>3.3 Firmware and builds</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Build</th>
+<th>Source / flags</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v2.2</td>
+<td><code>Expromo_EPS_v2_2/</code></td>
+<td>field firmware (MAC compiled in)</td>
+</tr>
+<tr>
+<td>v2.2, unit 2</td>
+<td>v2.2 with only the MAC changed</td>
+<td>v2.2 on unit 2 without a duplicate MAC</td>
+</tr>
+<tr>
+<td>v2.2 diagnostic</td>
+<td><code>tools/v2_2_diag/</code> (<code>-DBENCH_UNIT2</code> for unit 2's MAC)</td>
+<td>v2.2 + start-up report on USB serial (W5500 found, link, IP, MAC, gateway, mask, socket states every 2 s for 60 s); no behaviour change</td>
+</tr>
+<tr>
+<td>v2.2 fault</td>
+<td>scratch copy of v2.2 + hidden <code>TEST_W5500_RESET</code></td>
+<td>imitate a W5500 glitch</td>
+</tr>
+<tr>
+<td>Bare library</td>
+<td><code>tools/lib_minimal_test/</code></td>
+<td>Ethernet 2.0.2 with two servers, no EPS code</td>
+</tr>
+<tr>
+<td>v3.0</td>
+<td><code>Expromo_EPS_v3_0/</code></td>
+<td>the rewrite (production build: no flags)</td>
+</tr>
+<tr>
+<td>v3.0 test flags</td>
+<td><code>-DNET_DEBUG=1</code> (socket/link log on serial), <code>-DFAULT_INJECTION=1</code> (<code>TEST_W5500_RESET</code>, <code>TEST_HANG</code>, <code>TEST_STACK</code>), <code>-DMILLIS_ROLLOVER_TEST=1</code> (clock wraps 60 s after boot), <code>-DMAC_GEN_TEST</code>, <code>-DEPS_MAC_SUFFIX=0x024</code> (per-unit MAC)</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>H1 / H2 firmware</td>
+<td><code>tools/w5500_spi_stress/</code>, <code>tools/w5500_phy_cycle/</code></td>
+<td>built, <strong>not run yet</strong></td>
+</tr>
+</tbody>
+</table></div>
+<h3>3.4 Tools (all in <code>tools/</code>)</h3>
+<p><code>eps_loadtest.py</code> (read-only load test), <code>idle_dose_test.py</code>, <code>eps_power_test.py</code> (switches outputs), <code>dhcp_test_server.py</code>, <code>run_comparison.ps1</code> + <code>analyze_comparison.py</code>, <code>soak_monitor.py</code>, <code>reset_startup_test.py</code>, <code>hang_harness.py</code> (H1/H2, not run), <code>persistent_client_test.py</code>, <code>junk_input_test.py</code>, <code>m4250.py</code> (switch CLI over SSH); added 2026-10-09: <code>event_check.py</code> (single-event checks, Netio control), <code>repeat_flap.py</code>, <code>flap_capture.py</code>, <code>serial_logger.py</code> (with a command file), <code>decode_diag2.py</code>, <code>novahub_check.py</code>, <code>dhcp_watch.py</code>, <code>link_flap_test.py</code>; diagnostic build <code>v2_2_diag2/</code> (W5500 registers once a second). PC tools: Python 3.12, pyserial, Wireshark (tshark, dumpcap), nmap, arduino-cli (from Arduino IDE 2), PuTTY plink, Scapy (installed, not used for traffic injection).</p>
+<hr />
+<h2>4. Methods</h2>
+<ul>
+<li><strong>Pre-registration:</strong> for the A/B comparison and the W5500 hang tests, protocol and pass/fail criteria were committed to git before any data (<code>docs/comparison-protocol.md</code> 2026-10-08 17:59; <code>docs/w5500-hang-tests.md</code> 2026-10-09 00:15, amendments 08:04 and 08:22).</li>
+<li><strong>Crossover:</strong> both firmwares run at the same time on two boards on the same switch, then swapped, so board differences and time effects cancel out.</li>
+<li><strong>Reporting:</strong> every failure is reported, including v3.0's. Rates come with exact 95 % intervals (Clopper–Pearson); with zero events, the one-sided bound 1 − 0.05^(1/n) ≈ 3/n.</li>
+<li><strong>Evidence grades:</strong> Measured (on the bench, repeated) · Preliminary (seen, too few tries) · Code-read (from source) · Unknown.</li>
+<li><strong>Fault injection</strong> reproduces a mechanism's <em>effect</em> (e.g. W5500 settings lost) with one register write in a test build. It does not reproduce its cause.</li>
+<li><strong>Read-only by default:</strong> the load and dose tests send only <code>POWER_STATUS</code>, <code>PING</code>, <code>GET /</code>, idle connections; the power test (outputs switched) ran only with nothing connected. No crafted or spoofed traffic was sent to the units.</li>
+</ul>
+<hr />
+<h2>5. Results</h2>
+<h3>5.1 Code review of v2.2 (2026-10-08) — Code-read, later partly measured</h3>
+<ul>
+<li>The Arduino Ethernet library uses 4 of the W5500's 8 sockets on the ATmega328P. v2.2's UDP keepalive holds one permanently.</li>
+<li><code>EthernetServer::available()</code> hands over only connections that have sent data; silent connections are never closed. The W5500 keepalive is off, so half-open connections stay forever.</li>
+<li>The stall watchdog needs 3 of 4 sockets busy; a state with one listener missing is invisible to it.</li>
+<li><code>print(F())</code> sends every byte as its own TCP segment.</li>
+<li>DHCP (library): a renew without a free socket freezes the lease state; a request blocks up to 60 s against an 8 s watchdog; after a boot without DHCP the unit stays on its fallback for good.</li>
+<li>No W5500 health check; <code>W5100Class::init()</code> runs only once per boot, so the network can't be re-initialised without a CPU reset.</li>
+<li>D4 (blue LED) is the KS0304's SD-card chip select.</li>
+<li>v1.9.1: reboots after 60 s without a TCP exchange and always starts with the outputs off; its source already describes the stuck-socket symptom.</li>
+<li>RAM/stack, watchdog/bootloader loop, EEPROM wear: ruled out (compiled: enough RAM; Optiboot; <code>EEPROM.update</code>).</li>
+</ul>
+<h3>5.2 Link-partner interoperability (2026-10-08) — Measured</h3>
+<p>Unit 1 cabled straight to the NovaHub adapter:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100 Mbps full (auto)</td>
+<td>deaf: sends its keepalive ARP every 30.08 s, answers no ARP, no unicast ping, no TCP SYN (not even RST)</td>
+</tr>
+<tr>
+<td>after RESET button / power cycle / adapter EEE off</td>
+<td>still deaf</td>
+</tr>
+<tr>
+<td>adapter forced to 10 Mbps full</td>
+<td>works (ping, TCP, web)</td>
+</tr>
+<tr>
+<td>back to 100 Mbps</td>
+<td>deaf</td>
+</tr>
+<tr>
+<td>ASIX adapter at 100 Mbps</td>
+<td>works at once</td>
+</tr>
+</tbody>
+</table></div>
+<p>Same signature as §5.12 below.</p>
+<h3>5.3 v2.2 under load (2026-10-08 14:33) — Measured</h3>
+<p><code>eps_loadtest.py</code>, unit 1, direct ASIX link.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Port 5000 OK</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>baseline / 1 idle web connection</td>
+<td>20/20 · 20/20</td>
+</tr>
+<tr>
+<td>2 idle web connections</td>
+<td><strong>1/30</strong></td>
+</tr>
+<tr>
+<td>+ idle control connection (refused)</td>
+<td><strong>3/86</strong></td>
+</tr>
+<tr>
+<td>released</td>
+<td>20/20</td>
+</tr>
+<tr>
+<td>mixed load: Companion-like (1 Hz, 700 ms timeout)</td>
+<td><strong>44/60</strong>, failures every 3 s with the browser</td>
+</tr>
+<tr>
+<td>mixed load: eXcontrol-like (4 Hz, 4 s timeout)</td>
+<td>67/70</td>
+</tr>
+</tbody>
+</table></div>
+<p>Port 5000 was unreachable 107 s, ping 100 % throughout. Web page: <strong>3,598 TCP segments for 3,696 bytes</strong> (3,519 single-byte), 890–938 ms.</p>
+<h3>5.4 v3.0 development results (2026-10-08) — Measured</h3>
+<ul>
+<li><strong>First build, load test:</strong> 11 of ≈ 470 control requests got no reply. Packet capture: the W5500 ACKed the request but the firmware never answered. Serial debug: the W5500 briefly reports an <strong>undocumented socket state 0x11</strong> between LISTEN and ESTABLISHED, which the first build treated as "closing". Fixed: unknown states during a handshake count as "connecting". Repro afterwards <strong>400/400</strong>, and the full load test <strong>1,088/1,088</strong> (control avg 9–11 ms, max 47 ms; web 31–47 ms, 3 segments).</li>
+<li><strong>DHCP, bench server (60 s lease):</strong> DISCOVER→ACK at 5.7 s; renewals at 35.8 / 65.9 / 96.0 s (T1, unicast with <code>ciaddr</code>); server gone → fallback to static after lease expiry. The scenario was cut short (background task stopped under low memory), so "server returns" wasn't run with the bench server.</li>
+<li><strong>Long settings URL:</strong> an 80-byte label, all bytes %-encoded, saves and reads back byte for byte; request buffer raised 384 → 512 B (a worst-case URL exceeds 383).</li>
+<li><strong>Power and outputs (<code>eps_power_test.py</code>, nothing connected): 21/21</strong>: OUT1 at 1.03 s, steps 0.281–0.313 s, fully on at 2.52 s, order 1→6; POWER_ON when on: no-op; OUTx during the sequence stops it and POWER_ON when partly on re-sequences (v2.2 behaviour kept); web commands; restore after reboot.</li>
+<li><strong>D5/D6/D9 and LEDs:</strong> checked by hand (user). Factory reset: network defaults, MAC kept.</li>
+</ul>
+<h3>5.5 DHCP with a real server (Windows sharing, 2026-10-08 16:56–17:10) — Measured</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit in DHCP mode on fallback <code>.93</code>, sharing turned on 16:59:17</td>
+<td>lease <code>192.168.137.24</code> at 16:59:34, no reboot</td>
+</tr>
+<tr>
+<td>Load test on the DHCP address</td>
+<td><strong>1,086/1,086</strong>, control ~12 ms, page ~43 ms</td>
+</tr>
+<tr>
+<td>Reboots</td>
+<td>first build: new IP each time (<code>.24</code> → <code>.137</code> → <code>.223</code>) → <strong>fixed</strong> (last lease stored, requested again): 3 reboots → <code>.223</code> each time, bound ~5 s after boot</td>
+</tr>
+<tr>
+<td><code>PHYRESET=1</code> after sharing was enabled</td>
+<td>caused by link bounces (adapter reconfigured) making announcement probes count as failures → <strong>fixed</strong></td>
+</tr>
+<tr>
+<td>Cable out 27 s, back</td>
+<td><code>LINKDOWNS=1</code>, same IP, bound again 4 s after replug, <code>PHYRESET=0</code>, no reboot</td>
+</tr>
+</tbody>
+</table></div>
+<h3>5.6 Second unit and duplicate MAC (2026-10-08) — Measured</h3>
+<p>The temporary MAC was derived from the ATmega's serial bytes, which were identical on both boards: both units came up as <code>02:45:50:2F:69:FD</code>. Reachability: <strong>12/20 and 8/20</strong>; after giving unit 2 a different MAC: <strong>20/20 each</strong>. Fixed: the temporary MAC is random on first boot (watchdog-oscillator jitter) and then stored; <strong>20 distinct values on 2 boards × 2 boots</strong>.</p>
+<h3>5.7 Library isolation (2026-10-08) — Measured</h3>
+<p>Unit 2 ran the bare library sketch, and unit 1 ran v3.0 alongside it, both polled by eXcontrol. <code>idle_dose_test.py</code>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Idle connections held</th>
+<th>Bare library :5000 / :80</th>
+<th>v3.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–2</td>
+<td>20/20 / 20/20</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>3</td>
+<td>16/20 (idle on :80), 15/20 (idle on :5000) / 20/20</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>4 (5th refused)</td>
+<td><strong>0/10 / 0/10</strong></td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>held 60 s more</td>
+<td><strong>0/30 / 0/30</strong></td>
+<td>60/60</td>
+</tr>
+<tr>
+<td>released</td>
+<td>20/20 / 20/20</td>
+<td>100 %</td>
+</tr>
+</tbody>
+</table></div>
+<p>The library also sent its replies one byte per packet.</p>
+<h3>5.8 A/B crossover comparison (2026-10-08 18:00–19:05) — Measured</h3>
+<p>Pre-registered (§4). 3 load-test runs + 1 dose test per firmware per phase; phase A unit 1 = v3.0, unit 2 = v2.2; phase B swapped.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>v2.2 (6 runs, 2 boards)</th>
+<th>v3.0 (6 runs, 2 boards)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1 no lost requests</td>
+<td>FAIL (127–162 lost per run)</td>
+<td><strong>FAIL</strong> (0 in 5 runs, 1 ping in 1 run)</td>
+</tr>
+<tr>
+<td>C2 availability ≥ 99.9 %</td>
+<td>FAIL (84.2–86.6 %)</td>
+<td>PASS (99.91–100 %)</td>
+</tr>
+<tr>
+<td>C3 port 5000 outage ≤ 5 s</td>
+<td>FAIL (79–121 s)</td>
+<td>PASS (0 s)</td>
+</tr>
+<tr>
+<td>C4 control p99 ≤ 100 ms</td>
+<td>FAIL (1,031–1,532 ms)</td>
+<td>PASS (31–47 ms)</td>
+</tr>
+<tr>
+<td>C5 web p95 ≤ 500 ms</td>
+<td>FAIL (906–1,375 ms)</td>
+<td>PASS (47–62 ms)</td>
+</tr>
+<tr>
+<td>C6 dose ≥ 99 % at every step</td>
+<td>FAIL (0 %)</td>
+<td>PASS (100 %)</td>
+</tr>
+</tbody>
+</table></div>
+<p>The same on both boards. Seen in the dose tests: with 3 sockets stuck, v2.2's stall watchdog reboots the unit after ~60 s; a v2.2 reboot switches the outputs off unless "restore after reboot" is on. Full table: <code>docs/comparison-results.md</code>.</p>
+<h3>5.9 W5500 loses its settings (fault injection, 2026-10-08 18:2x–18:5x) — Measured</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>v2.2</th>
+<th>v3.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>After one W5500 soft reset</td>
+<td>no ping, no ARP, no TCP, no web</td>
+<td>the same for ~3 s</td>
+</tr>
+<tr>
+<td>Recovered by itself</td>
+<td><strong>0 / 4</strong> (watched 60–150 s)</td>
+<td><strong>5 / 5</strong> (3.0, 3.5, 4.1, 4.1, 6.0 s; <code>REINIT</code> counted)</td>
+</tr>
+<tr>
+<td>Brought back by</td>
+<td>USB reset (2.8 s) or power cycle</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>Observed on the dead v2.2 unit (user, at the bench): RGB <strong>blue</strong>; holding D9 blinked the red LED (drawn by the main loop, so the CPU was running); <strong>one D6 press gave no visible reaction (unexplained; procedure not verified)</strong>; unplugging the USB power brought it back.</p>
+<h3>5.10 v3.0 flight recorder (2026-10-08 19:0x) — Measured</h3>
+<p>A 96-event ring in EEPROM (survives power cuts; ~20 events/hour max). It logs boots with their reason, link up/down with speed/duplex, W5500 re-inits with the wrong registers, PHY resets, gateway silent/back, IP conflicts, DHCP lease/fallback, settings, factory reset, and every power/output command with its source. Bench test: all events logged correctly; the injected glitch was recorded as <code>W5500_REINIT version=0x04 wrong=GATEWAY,MASK,MAC,IP,ALL_ZERO(chip_reset)</code>; the log survived a reset and is readable via <code>NET_LOG</code> and on the web page.</p>
+<h3>5.11 Overnight side-by-side run (2026-10-08 19:07 – 2026-10-09 00:14) — Measured</h3>
+<p>v2.2 (unit 1) and v3.0 with recorder (unit 2), Ubiquiti switch, eXcontrol polling; <code>soak_monitor.py</code>: ping and TCP once a second, web every 30 s.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>5 h 08 min</th>
+<th>v2.2</th>
+<th>v3.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ping</td>
+<td>18,374 / 18,374</td>
+<td>18,412 / 18,412</td>
+</tr>
+<tr>
+<td>TCP</td>
+<td>18,374 / 18,374</td>
+<td>18,412 / 18,412</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>613 / 613</td>
+<td>614 / 614</td>
+</tr>
+<tr>
+<td>Worst TCP reply per minute: median / max</td>
+<td>188 / 625 ms</td>
+<td>16 / 16 ms</td>
+</tr>
+<tr>
+<td>v3.0 counters</td>
+<td>—</td>
+<td>all 0, 22,535 connections</td>
+</tr>
+</tbody>
+</table></div>
+<p>Under normal traffic neither firmware failed. (The packet capture of this run stopped writing after 1 min; no lost pings, so nothing was lost.)</p>
+<h3>5.12 Start-up after a reset (H4, H4b; 2026-10-09) — Measured, rate preliminary</h3>
+<p>USB reset (DTR). <em>Correction (2026-10-09, §5.17): this also resets the W5500 (its link renegotiates); it is not a CPU-only reset.</em> A reset fails if there's no answer to <code>POWER_STATUS</code> within 15 s; failures were watched 60 s.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Unit 1</th>
+<th>Unit 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>H4 first run, v2.2 (00:2x, stopped early)</td>
+<td>not run (USB port busy)</td>
+<td><strong>reset 36 failed</strong> (≥ 36 resets)</td>
+</tr>
+<tr>
+<td>H4 re-run, v2.2 diagnostic (08:05–08:21)</td>
+<td>200/200, median 2.23 s</td>
+<td><strong>198/200</strong> (resets 129, 191 failed)</td>
+</tr>
+<tr>
+<td>H4b-1, fuller diagnostic + capture (08:25–08:42)</td>
+<td>300/300</td>
+<td><strong>299/300</strong> (reset 275 failed)</td>
+</tr>
+<tr>
+<td>H4b-2 (08:44–09:09)</td>
+<td>v2.2 diagnostic: 300/300</td>
+<td><strong>v3.0: 300/300</strong>, median 3.73 s (it renegotiates the link at start-up)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>What a failed start-up looks like</strong> (unit 2; diagnostics every 2 s for 60 s):</p>
+<ul>
+<li><code>hw=3 link=1 ip=192.168.0.93 mac=02:45:50:A3:4E:D9 gw=192.168.0.1 mask=255.255.255.0 sock=14,14,22,0</code>: W5500 found, link up, all registers correct, both servers listening.</li>
+<li>No ping with the cached ARP entry; after deleting it, the PC's ARP requests (≈ 40, once a second, captured) got <strong>no reply</strong>.</li>
+<li>The unit <strong>still transmitted</strong>: its keepalive ARP 30 s after boot, from its correct MAC.</li>
+<li>The next reset brought it back each time.</li>
+</ul>
+<p><strong>Totals (v2.2):</strong> unit 2 <strong>4 deaf start-ups in ≥ 536 resets = 0.75 %</strong> (95 % CI 0.20–1.90 %); unit 1 <strong>0 in 800</strong> (≤ 0.37 %). Board/port difference: one-sided Fisher <strong>p = 0.026</strong>, confounded with the switch port (port swap pending). <strong>v3.0 on unit 2: 0 in 300</strong> (≤ 0.99 %); against v2.2's rate, P(0 in 300) = <strong>0.106</strong>.</p>
+<h3>5.13 Bench batch for v3.0 (2026-10-09 09:30–10:10) — Measured</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Controllers that keep connections open (change: idle control connections kept 5 min instead of 5 s; oldest idle one evicted when all four are taken; still closed after each answer)</td>
+<td>quiet 90 s then command: answered; 4 quiet clients hold all sockets, a 5th is served in 0.02 s; oldest evicted, newest works (6/6); dose test 100 %</td>
+</tr>
+<tr>
+<td>Per-unit MAC build <code>-DEPS_MAC_SUFFIX=0x024</code>, then generic build</td>
+<td>MAC <code>8C:1F:64:C3:90:24</code>, <code>MAC_ASSIGNED=YES</code>, kept by the generic build</td>
+</tr>
+<tr>
+<td>Fixed 10 Mbps half duplex</td>
+<td>negotiated <code>10HALF</code> with an Auto switch; 30/30 commands, page 63 ms; back to <code>100FULL</code></td>
+</tr>
+<tr>
+<td>Junk input (<code>junk_input_test.py</code>)</td>
+<td>16/16; settings unchanged</td>
+</tr>
+<tr>
+<td>millis() rollover (test build)</td>
+<td>power test 21/21 and short load test across it (sequence not timed to the exact wrap)</td>
+</tr>
+<tr>
+<td>Stack high-water mark (test build)</td>
+<td>≥ 464 B free at the lowest point</td>
+</tr>
+<tr>
+<td>Hung main loop (test build)</td>
+<td>restart after 19 s, <code>RESTART=WATCHDOG</code>, logged</td>
+</tr>
+<tr>
+<td>IP conflict (both units on one IP)</td>
+<td>both detected it within ~75 s (2 and 4 events)</td>
+</tr>
+<tr>
+<td>Companion module live test and parser</td>
+<td>correct answers; parsed as protocol 2.x with all fields</td>
+</tr>
+</tbody>
+</table></div>
+<p>Upgrade note: when a unit's MAC changes, a Windows PC kept the old MAC in its ARP cache until cleared; with per-unit builds the MAC does not change on upgrade.</p>
+<h3>5.14 NETGEAR M4250 baseline (2026-10-09, read-only)</h3>
+<p>Ports 0/6 and 0/12 at 100 Mbps full (auto), 0 receive/transmit errors, no link flaps; EEE and Energy-Detect off on all ports; RSTP on; LLDP active; log shows link-ups and SSH sessions. Port mapping confirmed from the MAC table.</p>
+<hr />
+<h3>5.15 Three units on v2.2: power, outputs, self-restart (2026-10-09 12:50–13:04) — Measured</h3>
+<p>Pre-registered single events (<code>docs/m4250-stress-tests.md</code>, amendment 2), 3 tries each; a unit counts as unresponsive with no answer for 60 s after the event.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Unit-tries</th>
+<th>Unresponsive</th>
+<th>Time to answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit 3 mains off 10 s (Netio)</td>
+<td>3</td>
+<td>0</td>
+<td>5.6–6.7 s</td>
+</tr>
+<tr>
+<td>Unit 3 mains off 0.2 / 0.5 / 0.9 / 1.5 / 3 s</td>
+<td>15</td>
+<td>0</td>
+<td>5.6–7.2 s</td>
+</tr>
+<tr>
+<td>POWER_ON → POWER_OFF; OUT1–6 on/off (all units)</td>
+<td>18</td>
+<td>0</td>
+<td>≤ 0.8 s</td>
+</tr>
+<tr>
+<td>Settings saved unchanged (v2.2 restarts through its watchdog)</td>
+<td>9</td>
+<td>0</td>
+<td>0.8 s</td>
+</tr>
+</tbody>
+</table></div>
+<p>The real box's supply holds the board ~0.9 s after a mains cut.</p>
+<h3>5.16 Switch-port flaps and the 13:05 event (2026-10-09 13:05–14:31) — Measured</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Flaps</th>
+<th>Unit-tries</th>
+<th>Unresponsive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>All three ports down 0.5 s / 10 s, 3 each</td>
+<td>6</td>
+<td>18</td>
+<td><strong>1</strong> (unit 2, 0.5 s, 13:05)</td>
+</tr>
+<tr>
+<td>Replication, all ports 0.5 s</td>
+<td>20</td>
+<td>60</td>
+<td>0</td>
+</tr>
+<tr>
+<td>v2.2 watchdog restart, then 60 s later the flap</td>
+<td>10</td>
+<td>30</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Port 0/12 only, 0.5 s, mirrored and instrumented</td>
+<td>98</td>
+<td>98</td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The 13:05 event:</strong> ports down 13:05:02–04, up 13:05:05–06; the switch logged Link Up on 0/12 at 13:05:08. Units 1 and 3 answered by 13:05:11–14. Unit 2: no ping, no ARP, no TCP from 13:05:04 to ~13:06:44, then answered again with <strong>no link event on 0/12 until the next flap at 13:07:00</strong>. Not recorded for this event: capture, serial, switch counters (instrumentation started 13:11). Over 12:49–14:31 the every-second poller saw no other unexplained outage ≥ 10 s on any unit. Unit 2's per-flap rate: <strong>1 in 134</strong> (95 % CI 0.02–4.1 %).</p>
+<h3>5.17 Which resets touch the W5500 (switch link log) — Measured</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Reset</th>
+<th>Count</th>
+<th>Link drops seen by the switch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>USB/DTR reset</td>
+<td>11 per unit</td>
+<td>12 per port (~2 s down each)</td>
+</tr>
+<tr>
+<td>v2.2 watchdog restart (settings save)</td>
+<td>19</td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<p>So the W5500's reset follows the board's RESET line (most likely; continuity not checked), and the M4250's ~3 s forwarding delay after a link-up (ports are "auto edge" in RSTP) explains why units answered 5.1 s after a DTR reset here vs 2.2 s on the Ubiquiti switch.</p>
+<h3>5.18 Host and switch checks (2026-10-09 afternoon) — Measured</h3>
+<p>PC: only LargeHUB holds 192.168.0.x, one route, correct neighbour entries for all units. When a unit goes silent, Windows also tries a Hyper-V adapter's default route (<code>vEthernet (Agent)</code> entries appear): a consequence, not a cause. A second NIC with a 192.168.0.x address gave the PC two routes for a while (~13:40–13:55, after the 13:05 event); fixed before further tests. Switch: RSTP 802.1w, unit ports auto-edge, no BPDUs from the units, port security off, broadcast storm control 5 % (no action).</p>
+<h3>5.19 W5500 registers once a second (<code>v2_2_diag2</code>) and a library defect — Measured</h3>
+<p>The dump shows on v2.2: MR 0, correct GAR/SUBR/SHAR/SIPR, VERSIONR 4, PHYCFGR as the chip sees its link. It also shows <strong>RTR = 0x02D0 (72 ms), RCR = 8, SIMR = 0xD0</strong>, although v2.2 sets 200 ms and 2 retries. Cause (source of Ethernet 2.0.2): <code>RTR</code> and <code>RCR</code> are defined at the W5100 addresses 0x0017/0x0019 and used for the W5500 too, where those addresses are SIR/SIMR and the RTR high byte. This explains the "8 ARP tries 73 ms apart" seen on 2026-10-08 and corrects finding #7. Not linked to the silence.</p>
+<h3>5.20 DHCP environment (2026-10-09 15:17–15:42, M4250 DHCP server, 2-min lease) — Measured</h3>
+<p>Unit 1 v3.0 (control), unit 2 v2.2 diagnostic, unit 3 v2.2 real box; fallback addresses in another subnet (192.168.137.20/.21/.22). Evidence: DHCP and ARP capture, unit 2's serial log, the switch's binding table.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Unit 1 (v3.0)</th>
+<th>Units 2, 3 (v2.2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server switched on</td>
+<td>lease by itself in 17 s</td>
+<td>need a restart (no retry after fallback); then lease in 2.6 s / ~15 s</td>
+</tr>
+<tr>
+<td>10 min of renewals</td>
+<td>kept its lease, 0 restarts</td>
+<td>renewals ACKed, then one unanswered → ~10 s blocked in the library's DHCP loop → <strong>watchdog restart</strong> → same lease; <strong>every 3–4 min</strong></td>
+</tr>
+<tr>
+<td>Server off 5 min</td>
+<td>kept its address to the lease end, fell back, asked every 30 s</td>
+<td>next renewal unanswered → restart → <strong>60.8 s DHCP wait</strong> → static fallback → <strong>no DHCP request since</strong></td>
+</tr>
+<tr>
+<td>Server on again</td>
+<td>lease again in <strong>6 s</strong></td>
+<td><strong>0 DHCP packets in 5.5 min: stranded</strong>, unreachable from the DHCP subnet</td>
+</tr>
+<tr>
+<td>Unit 3 mains off 10 s</td>
+<td>—</td>
+<td>lease again, answering <strong>13 s</strong> after power on</td>
+</tr>
+</tbody>
+</table></div>
+<p>Unit 3 then kept restarting about every 4 min while left on this server (visible as the LED going dark). Why the switch dropped the v2.2 bindings although it ACKed their renewals (broadcast, client address 0.0.0.0) is not established; v3.0's renewals (unicast, with its address) kept its binding.</p>
+<h3>5.21 Link partner at 100 Mbps (NovaHub adapter, 2026-10-09 14:41–14:55) — Measured, set aside</h3>
+<p>Units 1 and 2, each cabled straight to the NovaHub USB 10/100 adapter: at 100 Mbps (any duplex) no frame reached the W5500's sockets (UDP receive counter 0, no ping, no ARP, no TCP) while the chip reported link up with the right speed and duplex; at 10 Mbps everything worked (230/230 bytes, 10/10 pings); a PHY reset didn't help. Same on both boards and cables. The adapter has been removed from the bench; this line was set aside as a false lead for the field question.</p>
+<hr />
+<h2>6. Discussion</h2>
+<p><strong>What explains the field symptom.</strong> The total loss (no ping, no ARP) can only come from the W5500 not answering at all:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Matches</th>
+<th>v2.2 recovers</th>
+<th>v3.0 recovers</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DHCP strand: an unanswered renewal → v2.2 restart → no server within 60 s → static fallback for good</td>
+<td>exactly (DHCP mode only)</td>
+<td><strong>no, until power cycle</strong></td>
+<td>yes, by itself (6 s after the server returns)</td>
+<td>any DHCP outage or non-answer at renewal time</td>
+</tr>
+<tr>
+<td>W5500 loses its settings</td>
+<td>exactly</td>
+<td>no</td>
+<td>yes, 3–6 s</td>
+<td>unknown; supply dip / ESD suspected; load switching untested</td>
+</tr>
+<tr>
+<td>W5500 deaf after a link negotiation (sends, receives nothing)</td>
+<td>exactly</td>
+<td>unknown beyond 60 s; once cleared by itself after 97 s</td>
+<td>avoided 0/300 (not proven); <strong>no recovery if it happens on a network without a reachable gateway</strong></td>
+<td>~1 in 130 negotiations on one board (resets, port flaps)</td>
+</tr>
+<tr>
+<td>Socket starvation</td>
+<td>no (ping works)</td>
+<td>sometimes, via a watchdog reboot</td>
+<td>never starves</td>
+<td>idle / half-open connections</td>
+</tr>
+<tr>
+<td>Duplicate MAC / IP</td>
+<td>partly</td>
+<td>no</td>
+<td>reports IP conflicts</td>
+<td>process error</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>DHCP sites.</strong> The DHCP strand matches the field description exactly and needs no hardware fault: a router or DHCP server that is down, rebooting or slow when a v2.2 unit renews leaves that unit unreachable until someone power-cycles it. It does not apply to units set to static.</p>
+<p><strong>Static sites.</strong> Two candidates remain: the W5500 losing its settings (trigger untested: load switching), and deafness after a link negotiation (rare, persistence unknown). <em>Withdrawn (2026-10-09):</em> the earlier chain "v2.2's own CPU-only reboots come up deaf"; the deaf start-ups followed DTR resets, which also reset the W5500, and 19+ watchdog restarts never came up deaf.</p>
+<p><strong>Why v3.0 had 0/300 deaf start-ups</strong> is open: both firmwares got a W5500 hardware reset at each DTR reset; v3.0 additionally resets the PHY in software and negotiates a second time.</p>
+<p><strong>The Arduino Ethernet library</strong> is responsible for the starvation behaviour and the one-byte-per-packet output (§5.7). v2.2 made it worse (the permanent keepalive socket) and did not compensate.</p>
+<p><strong>v3.0 assessment.</strong> It fixes the reproduced defects and mechanism (a), and it matches or beats v2.2 everywhere it was measured. Five bugs were found and fixed during two days of testing (0x11 state, DHCP address per reboot, PHY reset on link bounce, PHY recovery assuming a gateway, identical temporary MACs). That is the expected cost of a rewrite; more may remain.</p>
+<hr />
+<h2>7. Limits of the evidence</h2>
+<ul>
+<li><strong>The field trigger is untested.</strong> Fault injection reproduces effects, not causes. There were no mains loads, no real power cuts (the USB reset keeps the W5500 powered) and no ESD, and only one enterprise switch so far (not yet exercised).</li>
+<li><strong>No field data.</strong> Site conditions and the failure rate are unknown. A reported customer failure turned out to be v1.9.1-10ch (source unavailable) and was not investigated.</li>
+<li><strong>Small numbers.</strong> Two boards; runs of minutes to 5 h; the deaf start-up rate rests on 4 events.</li>
+<li><strong>Confounding.</strong> The board difference is confounded with the switch port and cable until the port swap.</li>
+<li><strong>Author bias.</strong> The same person wrote v3.0 and the tests; mitigated by pre-registration, crossover, reporting v3.0's failures, and scripts anyone can rerun; not removed.</li>
+<li><strong>Unverified observation.</strong> The D6 press on a dead v2.2 unit (no reaction) needs a controlled retest.</li>
+<li><strong>Process issues during testing.</strong><ul>
+<li>Claude Code stopped three background tasks under low PC memory: the DHCP scenario, a check-in timer, and the first H4 run.</li>
+<li>Two packet captures didn't save (an argument-quoting issue, then fixed).</li>
+<li>Another program intermittently held a USB port.</li>
+<li>A planned test that emulated Cisco switch traffic was not run.</li>
+</ul>
+</li>
+<li><strong>The 13:05 event had one observer</strong> (the PC) and no capture, serial or switch counters; it did not recur in 133 further flaps of that port.</li>
+<li><strong>DHCP results come from one server</strong> (the M4250's own); other servers may answer v2.2's renewals differently. The strand after an outage follows from v2.2's code for any server.</li>
+<li><strong>Not exercised in v3.0:</strong> real loads; recovery from a real deaf PHY; behaviour at 49+ days except the simulated rollover; DHCP NAK; two units on DHCP; multi-day operation.</li>
+</ul>
+<hr />
+<h2>8. Conclusions</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Conclusion</th>
+<th>Grade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The field symptom means the W5500 stops answering; socket starvation alone can't cause it</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td><strong>DHCP mode: after a DHCP outage at renewal time, v2.2 stays unreachable until power-cycled; v3.0 recovers by itself</strong></td>
+<td>Measured (one server)</td>
+</tr>
+<tr>
+<td>On v2.2, one unanswered DHCP renewal makes the unit restart itself (outputs off unless "restore")</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td>If the W5500 loses its settings, v2.2 stays dead until reset; v3.0 recovers in 3–6 s</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td>After some link negotiations a W5500 goes deaf (registers correct, receives nothing); ~1 in 130 on one board</td>
+<td>Measured (rate preliminary; persistence unknown)</td>
+</tr>
+<tr>
+<td>A USB/DTR reset also resets the W5500; a v2.2 watchdog restart doesn't</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td>Ethernet 2.0.2 writes RTR/RCR to the wrong W5500 registers</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td>v3.0 avoids the deaf start-up</td>
+<td>Preliminary (p = 0.106)</td>
+</tr>
+<tr>
+<td>v3.0 beats v2.2 on all pre-registered criteria except one lost ping</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td>What makes static-mode units drop off in the field</td>
+<td>Unknown</td>
+</tr>
+<tr>
+<td>v3.0 prevents the field failure</td>
+<td>Unknown (needs a pilot)</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2>9. Next steps</h2>
+<ol>
+<li><strong>Field facts:</strong> for each failing site, DHCP or static; DHCP server/router type and whether it was down or rebooted around the failure.</li>
+<li><strong>Field check before power-cycling a dead unit:</strong> on the site switch, is the unit's MAC still in the MAC table and is its port's receive counter rising? Yes → the unit still transmits (deaf receiver); no → it lost its settings or stopped.</li>
+<li><strong>v3.0 on unit 3 (the real box), then on the showroom box with real loads:</strong> flash with the box's own MAC (<code>-DEPS_MAC_SUFFIX</code>), capacitor removed for the upload; switch the loads with the poller and flight recorder running. Any <code>REINIT</code>/<code>PHYRESET</code> count or logged W5500 re-init is the finding.</li>
+<li><strong>Persistence of the deaf state:</strong> catch a deaf start-up on unit 2 (DTR resets, register dump, switch counters) and leave it alone for ≥ 10 min.</li>
+<li><strong>DHCP:</strong> a switch reload with the M4250 as DHCP server (the realistic outage); another DHCP server type.</li>
+<li><strong>Pilot:</strong> v3.0 + flight recorder with per-unit MACs at sites that had failures. With no failure in N unit-days, the 95 % bound is ≈ 3/N.</li>
+</ol>
+<hr />
+<h2>Appendix A: documents</h2>
+<p><code>docs/network-investigation.md</code> (v2.2 analysis and early bench results) · <code>docs/v3.0.md</code> (v3.0 design, changes, test notes) · <code>docs/comparison-protocol.md</code> + <code>docs/comparison-results.md</code> · <code>docs/w5500-hang-tests.md</code> + <code>docs/w5500-hang-results.md</code> · <code>docs/eps-firmware-review.html</code> (an earlier, internal summary page) · <code>docs/HANDOVER.md</code> (bench state and how to continue).</p>
+<h2>Appendix B: chronology</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>When</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10-08 afternoon</td>
+<td>Code review; NovaHub deafness; v2.2 load test; v3.0 written and flashed; 0x11 bug found/fixed</td>
+</tr>
+<tr>
+<td>10-08 ~15–17 h</td>
+<td>DHCP bench server; power test; Windows-sharing DHCP; sticky-IP and PHY-reset fixes</td>
+</tr>
+<tr>
+<td>10-08 ~17–18 h</td>
+<td>Second unit; duplicate-MAC bug; library isolation; comparison protocol committed</td>
+</tr>
+<tr>
+<td>10-08 18:00–19:05</td>
+<td>A/B phases A and B; fault injection; flight recorder</td>
+</tr>
+<tr>
+<td>10-08 19:07 – 10-09 00:14</td>
+<td>Overnight side-by-side run</td>
+</tr>
+<tr>
+<td>10-09 00:15</td>
+<td>W5500 hang-test protocol committed; H4 first run (stopped)</td>
+</tr>
+<tr>
+<td>10-09 08:05–09:09</td>
+<td>H4 re-run, H4b-1, H4b-2</td>
+</tr>
+<tr>
+<td>10-09 09:30–10:10</td>
+<td>Persistent connections; v3.0 bench batch</td>
+</tr>
+<tr>
+<td>10-09 late morning</td>
+<td>NETGEAR M4250 connected; access and read-only baseline</td>
+</tr>
+<tr>
+<td>10-09 ~12:30</td>
+<td>Unit 3 (real EPS box) and Netio PowerBOX added</td>
+</tr>
+<tr>
+<td>10-09 12:50–13:04</td>
+<td>Single events: power cuts, outputs, self-restarts (all fine)</td>
+</tr>
+<tr>
+<td>10-09 13:05</td>
+<td>Unit 2 silent ~97 s after a 0.5 s port flap</td>
+</tr>
+<tr>
+<td>10-09 13:11–14:31</td>
+<td>Replications (0/30 flaps), instrumented single-port flaps (0/98); DTR resets the W5500; library RTR/RCR defect</td>
+</tr>
+<tr>
+<td>10-09 14:41–14:55</td>
+<td>NovaHub at 100 Mbps: deaf on both boards (set aside)</td>
+</tr>
+<tr>
+<td>10-09 15:17–15:42</td>
+<td>DHCP tests: v2.2 restarts at renewals and strands after an outage; v3.0 recovers</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+
+</body>
+</html>
