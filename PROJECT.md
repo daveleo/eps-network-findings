@@ -2,10 +2,10 @@
 name: EPS network findings (public site)
 status: active
 priority:
-version: 2026-10-09
+version: 2026-10-10
 deadline:
-next: Share the link with IT and the original EPS developer; update the pages after the load test and pilot
-updated: 2026-10-09
+next: Share the link with IT and the original EPS developer; update the pages after the hands-on checks, real loads and pilot
+updated: 2026-10-10
 repo: daveleo/eps-network-findings
 url: https://daveleo.github.io/eps-network-findings/
 ---
@@ -35,8 +35,9 @@ Edit or replace a page in `src/` (the report comes from `EPS/docs/report.md` via
 
 ## Current state
 
-First version published 2026-10-09: executive summary, findings at a glance, full report (status 2026-10-09 evening).
+Updated 2026-10-10: all three pages present v3.1 as the current final firmware, with the final-build re-run and the pre-registered standards suite (v3.1 46 of 56 requirements, v2.2 26). First version published 2026-10-09.
 
 ## Milestones
 
 - [x] 2026-10-09 — Site published with the three documents
+- [x] 2026-10-10 — Pages updated for v3.1 (final) and the standards comparison

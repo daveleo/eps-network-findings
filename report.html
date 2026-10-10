@@ -48,8 +48,8 @@ a { color: var(--accent); }
 <nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
 <div class="wrap">
 <h1>EPS network failures: investigation report</h1>
-<p><strong>Expromo EPS power sequencer (Keyestudio KS0304: ATmega328P + WIZnet W5500), firmware v2.2 vs v3.0</strong>
-Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code> · Status as of 2026-10-09 evening</p>
+<p><strong>Expromo EPS power sequencer (Keyestudio KS0304: ATmega328P + WIZnet W5500), firmware v2.2 vs v3.0 and v3.1</strong>
+Bench work 2026-10-08 13:00 – 2026-10-10 19:44 · Repo <code>daveleo/EPS</code> · Status as of 2026-10-10 evening · <strong>v3.1 is the current final firmware</strong></p>
 <hr />
 <h2>1. Summary</h2>
 <p>Units in the field drop off the network at random: no ping, no web page, no TCP control, until power is cycled. No failed unit has been examined in its failed state. Field units are usually set to a static IP; some AV networks have a DHCP server, sometimes not.</p>
@@ -64,8 +64,9 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 </li>
 <li><strong>Static-mode field failures are not explained yet.</strong> IP address conflicts are excluded (field knowledge). Remaining candidates: (b) triggered by load switching, and (c).</li>
 <li><strong>v2.2 also has network defects of its own</strong> that cause partial failures (two idle connections block the control port while ping works; the web page blocks control for ~0.9 s; the stall watchdog can't see either). Part of this is the <strong>Arduino Ethernet library</strong> itself, which also <strong>writes its retry settings to W5100 register addresses on the W5500</strong> (RTR = 72 ms, RCR = 8 instead of 200 ms × 2; §5.19).</li>
-<li><strong>v3.0</strong>, a rewrite of the network layer, beats v2.2 on every pre-registered criterion except one lost ping, recovers from (a) and (b), and kept its lease through every DHCP event. <strong>It is not field-proven</strong> and has not yet run on a box with real loads.</li>
+<li><strong>v3.0</strong>, a rewrite of the network layer, beats v2.2 on every pre-registered criterion except one lost ping, recovers from (a) and (b), and kept its lease through every DHCP event. <strong>v3.1</strong> (v3.0 + network-standards work: DHCP timing and DECLINE, address conflict detection, TCP timers, HTTP methods, syslog) is <strong>the current final firmware</strong>; every non-soak test was re-run on its final build on the real box and passed (§5.22). <strong>Neither is field-proven</strong>, and neither has run on a box with real loads.</li>
 <li><strong>Corrections made on 2026-10-09</strong> (§5.17–5.19): a USB/DTR reset also resets the W5500 (its link renegotiates), so the deaf start-ups followed a W5500 hardware reset, not a CPU-only restart; the H4c rationale ("v2.2 never resets the PHY") is void; v2.2's own watchdog restarts never produced a deaf state (0 in 19+). Finding #7 (retransmission "3 tries, ~1.4 s") was wrong because of the library defect.</li>
+<li><strong>Standards (§5.23):</strong> on a pre-registered suite of 56 requirements from 10 standards, run on the same box, <strong>v3.1 passes 46 and v2.2 26</strong>. By standard, v3.1 passes 6 (IEEE 802.3, IEEE 802 MAC, ARP, RFC 5227, 802.1D, syslog) and v2.2 4 (it has no syslog). Both fail RFC 1122, DHCP, TCP and HTTP, but v3.1 on 8 items and v2.2 on 25. Two of the shared failures are limits of the W5500 chip that no firmware can fix. The suite measures conformance, not the field failure: v3.1's main gain over v2.2 is recovery from (a) and (b), which the suite doesn't test.</li>
 </ol>
 <hr />
 <h2>2. Background</h2>
@@ -134,6 +135,7 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <li><strong>Ubiquiti 5-port switch</strong> connecting LargeHUB and both units; isolated from the office network (the office is on a separate NIC, no bridging, no IP forwarding, no connection sharing; checked).</li>
 <li><strong>Windows Internet Connection Sharing</strong> on LargeHUB for one DHCP session (<code>192.168.137.0/24</code>), then removed.</li>
 <li><strong>M4250 changes during the tests (running config only, never saved):</strong> port shutdown/no shutdown, a port mirror 0/12 → 0/20 (~13:55–15:15), the switch's own DHCP server (pool 192.168.0.100–.150, 2-min lease, from 15:17). An accidental EEE enable on 0/6 (CLI help query) was undone before any test.</li>
+<li><strong>Direct cable to the PC's built-in NIC</strong> (<code>192.168.0.23</code>, 2026-10-09 evening and 2026-10-10): v3.1 tests and the conformance suite, unit 3 only.</li>
 <li><strong>NETGEAR M4250-26G4XF-PoE+</strong> (firmware 13.0.4.14), a model on which the failure occurred in the field. PC on port 0/1 (<code>192.168.0.66</code>), units on 0/6 and 0/12, switch management <code>192.168.0.250</code>. Isolated. EEE and Energy-Detect off on all ports, RSTP (802.1w) on, BPDU guard off, clock not set (shows May 2023).</li>
 </ol>
 <h3>3.3 Firmware and builds</h3>
@@ -174,7 +176,17 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <tr>
 <td>v3.0</td>
 <td><code>Expromo_EPS_v3_0/</code></td>
-<td>the rewrite (production build: no flags)</td>
+<td>the rewrite (production build: no flags); tagged <code>v3.0-baseline</code></td>
+</tr>
+<tr>
+<td><strong>v3.1 (final)</strong></td>
+<td><code>Expromo_EPS_v3_1/</code>, branch <code>v3.1-standards</code>, commit <code>5284db6</code>, per unit <code>-DEPS_MAC_SUFFIX=0x058</code></td>
+<td>v3.0 + standards work (§5.22); 31,120 B flash, 1,364 B RAM; same test flags as v3.0</td>
+</tr>
+<tr>
+<td>EEPROM wipe</td>
+<td><code>tools/eeprom_wipe/</code></td>
+<td>all EEPROM to 0xFF, so the firmware starts from defaults (conformance suite)</td>
 </tr>
 <tr>
 <td>v3.0 test flags</td>
@@ -189,11 +201,11 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 </tbody>
 </table></div>
 <h3>3.4 Tools (all in <code>tools/</code>)</h3>
-<p><code>eps_loadtest.py</code> (read-only load test), <code>idle_dose_test.py</code>, <code>eps_power_test.py</code> (switches outputs), <code>dhcp_test_server.py</code>, <code>run_comparison.ps1</code> + <code>analyze_comparison.py</code>, <code>soak_monitor.py</code>, <code>reset_startup_test.py</code>, <code>hang_harness.py</code> (H1/H2, not run), <code>persistent_client_test.py</code>, <code>junk_input_test.py</code>, <code>m4250.py</code> (switch CLI over SSH); added 2026-10-09: <code>event_check.py</code> (single-event checks, Netio control), <code>repeat_flap.py</code>, <code>flap_capture.py</code>, <code>serial_logger.py</code> (with a command file), <code>decode_diag2.py</code>, <code>novahub_check.py</code>, <code>dhcp_watch.py</code>, <code>link_flap_test.py</code>; diagnostic build <code>v2_2_diag2/</code> (W5500 registers once a second). PC tools: Python 3.12, pyserial, Wireshark (tshark, dumpcap), nmap, arduino-cli (from Arduino IDE 2), PuTTY plink, Scapy (installed, not used for traffic injection).</p>
+<p><code>eps_loadtest.py</code> (read-only load test), <code>idle_dose_test.py</code>, <code>eps_power_test.py</code> (switches outputs), <code>dhcp_test_server.py</code>, <code>run_comparison.ps1</code> + <code>analyze_comparison.py</code>, <code>soak_monitor.py</code>, <code>reset_startup_test.py</code>, <code>hang_harness.py</code> (H1/H2, not run), <code>persistent_client_test.py</code>, <code>junk_input_test.py</code>, <code>m4250.py</code> (switch CLI over SSH); added 2026-10-09: <code>event_check.py</code> (single-event checks, Netio control), <code>repeat_flap.py</code>, <code>flap_capture.py</code>, <code>serial_logger.py</code> (with a command file), <code>decode_diag2.py</code>, <code>novahub_check.py</code>, <code>dhcp_watch.py</code>, <code>link_flap_test.py</code>; diagnostic build <code>v2_2_diag2/</code> (W5500 registers once a second); added 2026-10-10: <code>v31_dhcp_test.py</code>, <code>v31_http_check.py</code>, <code>v31_fault_check.py</code>, <code>v31_link10_check.py</code>, <code>v31_rollover_check.py</code>, <code>v31_stack_run.py</code>, <code>udp_services.py</code>, <code>conformance_suite.py</code> + <code>conformance_report.py</code>. PC tools: Python 3.12, pyserial, Wireshark (tshark, dumpcap), nmap, arduino-cli (from Arduino IDE 2), PuTTY plink, Scapy (installed, not used for traffic injection).</p>
 <hr />
 <h2>4. Methods</h2>
 <ul>
-<li><strong>Pre-registration:</strong> for the A/B comparison and the W5500 hang tests, protocol and pass/fail criteria were committed to git before any data (<code>docs/comparison-protocol.md</code> 2026-10-08 17:59; <code>docs/w5500-hang-tests.md</code> 2026-10-09 00:15, amendments 08:04 and 08:22).</li>
+<li><strong>Pre-registration:</strong> for the A/B comparison and the W5500 hang tests, protocol and pass/fail criteria were committed to git before any data (<code>docs/comparison-protocol.md</code> 2026-10-08 17:59; <code>docs/w5500-hang-tests.md</code> 2026-10-09 00:15, amendments 08:04 and 08:22; <code>docs/v3.1-standards.md</code> test table 2026-10-09; <code>docs/conformance-suite.md</code> 2026-10-10, before either firmware was run).</li>
 <li><strong>Crossover:</strong> both firmwares run at the same time on two boards on the same switch, then swapped, so board differences and time effects cancel out.</li>
 <li><strong>Reporting:</strong> every failure is reported, including v3.0's. Rates come with exact 95 % intervals (Clopper–Pearson); with zero events, the one-sided bound 1 − 0.05^(1/n) ≈ 3/n.</li>
 <li><strong>Evidence grades:</strong> Measured (on the bench, repeated) · Preliminary (seen, too few tries) · Code-read (from source) · Unknown.</li>
@@ -714,6 +726,179 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <p>Unit 3 then kept restarting about every 4 min while left on this server (visible as the LED going dark). Why the switch dropped the v2.2 bindings although it ACKed their renewals (broadcast, client address 0.0.0.0) is not established; v3.0's renewals (unicast, with its address) kept its binding.</p>
 <h3>5.21 Link partner at 100 Mbps (NovaHub adapter, 2026-10-09 14:41–14:55) — Measured, set aside</h3>
 <p>Units 1 and 2, each cabled straight to the NovaHub USB 10/100 adapter: at 100 Mbps (any duplex) no frame reached the W5500's sockets (UDP receive counter 0, no ping, no ARP, no TCP) while the chip reported link up with the right speed and duplex; at 10 Mbps everything worked (230/230 bytes, 10/10 pings); a PHY reset didn't help. Same on both boards and cables. The adapter has been removed from the bench; this line was set aside as a false lead for the field question.</p>
+<h3>5.22 v3.1: standards work and the final build (2026-10-09 17:20 – 2026-10-10 18:46) — Measured</h3>
+<p>v3.1 is v3.0 plus changes for network-standards conformance (<code>docs/v3.1-standards.md</code>). IPv6 and security features are out of scope by decision. All tests ran on unit 3 (the real box), cabled straight to the PC.</p>
+<p><strong>Changes from v3.0:</strong></p>
+<ul>
+<li><strong>DHCP (RFC 2131):</strong> random 1–10 s start delay; retransmission 4, 8, 16, 32, 64 s; renewal at T1 unicast from its own address, rebind at T2 broadcast; DECLINE when the leased address is in use, then ≥ 10 s wait.</li>
+<li><strong>Address conflict detection (RFC 5227)</strong> before any address is used (static at boot and after a link outage ≥ 5 s, DHCP lease, fallback): 3 ARP probes, 2 announcements; an address in use is not taken; later conflicts are defended.</li>
+<li><strong>TCP (RFC 1122):</strong> give-up after 102 s (RTR 200 ms × 19); keep-alive off by default.</li>
+<li><strong>HTTP (RFC 9110):</strong> 400 for a malformed request, 405 + <code>Allow</code> for other methods, HEAD without body and without action.</li>
+<li><strong>Optional syslog</strong> (RFC 5424) of every logged event. An SNTP client was built and dropped (flash).</li>
+<li><strong>From an external review:</strong> split TCP commands handled, inputs and power sequence keep running while a network send waits, DHCP restarts from 0.0.0.0 after a link outage, conflict policy, DHCP option bounds.</li>
+</ul>
+<p><strong>Final build</strong> <code>5284db6</code>: 31,120 B flash (1,136 free), 1,364 B RAM. <strong>Every non-soak test was re-run on it (2026-10-10 17:51–18:46); all pass:</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DHCP sequence (no server → fallback; lease; renewals; expiry; address in use → DECLINE ×4; free address)</td>
+<td>pass, every step as RFC 2131 requires</td>
+</tr>
+<tr>
+<td>Syslog</td>
+<td>pass: every event (boot, link, settings, power/output commands with source, DHCP)</td>
+</tr>
+<tr>
+<td>Static start-up, 3 resets</td>
+<td>pass ×3: 3 probes 1.08–1.99 s apart, 2 announcements 2.0 s apart, no false conflict</td>
+</tr>
+<tr>
+<td>HTTP / TCP checks</td>
+<td>21/21</td>
+</tr>
+<tr>
+<td>Persistent control clients</td>
+<td>6/6; with every control socket held idle, a new client is served in 0.02 s</td>
+</tr>
+<tr>
+<td>Idle-connection dose (0–5 idle on :80, then :5000)</td>
+<td>800/800 probes answered</td>
+</tr>
+<tr>
+<td>10 Mbps half duplex</td>
+<td>pass; one ping lost under load in each of 2 runs (TCP 1,086/1,086)</td>
+</tr>
+<tr>
+<td>Stack low-water (test build, every heavy path)</td>
+<td>243 B free</td>
+</tr>
+<tr>
+<td><strong>W5500 settings loss ×10</strong></td>
+<td><strong>10/10 recovered in 2.1–6.9 s; outputs stayed on throughout</strong></td>
+</tr>
+<tr>
+<td>Main-loop hang ×3</td>
+<td>3/3 watchdog restart, answering ~25 s later</td>
+</tr>
+<tr>
+<td>millis() rollover</td>
+<td>6/6</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Found:</strong> with a configured gateway that doesn't answer (normal on a closed AV network), the once-a-minute gateway check makes the chip send ~20 ARP requests in 3.8 s; RFC 1122 recommends ≤ 1 per second. Negligible load; listed as a known deviation (§5.23).</p>
+<p><strong>Not yet tested on v3.1:</strong> D5/D6/D9 inputs and LED colours by hand; real power cycles from the Netio with USB unplugged; real loads.</p>
+<h3>5.23 Conformance suite: v3.1 vs v2.2 (2026-10-10 19:06–19:44) — Measured</h3>
+<p>Fifty-six requirements from ten standards, each with a pass criterion, committed before either firmware was run (<code>docs/conformance-suite.md</code>). The same tool (<code>tools/conformance_suite.py</code>) ran on both firmwares on unit 3, cabled straight to the PC. It covers link (PC NIC forced to 10/100 half), resets, an 8 s link outage, a bench DHCP server (no server, lease, server gone, NAK, address in use), a static address equal to the PC's, and fragmented pings. No forged traffic. A standard passes only if every applicable requirement passes. Results: <code>docs/conformance-results.md</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Standard</th>
+<th>v3.1</th>
+<th>v2.2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IEEE 802.3 Ethernet</td>
+<td><strong>PASS</strong></td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>IEEE 802 MAC addressing</td>
+<td><strong>PASS</strong></td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>RFC 826 ARP</td>
+<td><strong>PASS</strong></td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>RFC 1122 host requirements</td>
+<td>FAIL (2 MUST, 1 SHOULD)</td>
+<td>FAIL (2 MUST, 1 SHOULD)</td>
+</tr>
+<tr>
+<td>RFC 5227 address conflict detection</td>
+<td><strong>PASS</strong> (2 not verified)</td>
+<td>FAIL (4 MUST, 2 SHOULD)</td>
+</tr>
+<tr>
+<td>RFC 2131/2132 DHCP client</td>
+<td>FAIL (1 MUST)</td>
+<td>FAIL (4 MUST, 3 SHOULD)</td>
+</tr>
+<tr>
+<td>TCP (RFC 9293 / 1122)</td>
+<td>FAIL (1 MUST)</td>
+<td>FAIL (1 MUST, 1 SHOULD)</td>
+</tr>
+<tr>
+<td>HTTP (RFC 9110 / 9112)</td>
+<td>FAIL (3 MUST)</td>
+<td>FAIL (6 MUST, 1 SHOULD)</td>
+</tr>
+<tr>
+<td>IEEE 802.1D/Q (end station)</td>
+<td><strong>PASS</strong></td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>RFC 5424/5426 syslog</td>
+<td><strong>PASS</strong></td>
+<td>N/A (no syslog)</td>
+</tr>
+<tr>
+<td><strong>Requirements passed (of 56)</strong></td>
+<td><strong>46</strong> (8 fail, 2 not verified)</td>
+<td><strong>26</strong> (25 fail, 1 not verified, 4 n/a)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why the failures happen:</strong></p>
+<ul>
+<li><strong>W5500 chip limits, both firmwares:</strong><ul>
+<li>Its built-in ping responder corrupts echo data after byte 119.</li>
+<li>It has no IP fragment reassembly.</li>
+</ul>
+</li>
+</ul>
+<p>No firmware on this board can fix either.</p>
+<ul>
+<li><strong>Shared by both firmwares, fixable:</strong><ul>
+<li>ARP rate towards an absent gateway (v3.1: 20 in 3.8 s once a minute; v2.2: 8 in 0.5 s every 30 s).</li>
+<li>No 400 for a request without <code>Host</code>.</li>
+<li>No 414 for an over-long URL.</li>
+</ul>
+</li>
+<li><strong>Shared by both firmwares, kept on purpose:</strong><ul>
+<li>The web page switches power through GET links, which control systems also use.</li>
+<li>A stalled receiver is dropped after a few seconds (v3.1: 2 s, so it can't block a socket or power control). The standard requires the connection to be kept.</li>
+<li>DHCP requests leave from a non-zero address while the unit has no lease (v3.1: from its static fallback, as the chip has one address; v2.2: from an old lease). The standard requires 0.0.0.0.</li>
+</ul>
+</li>
+<li><strong>v2.2 only:</strong><ul>
+<li>No address conflict detection: it took an address already in use and claimed it (32 ARP frames).</li>
+<li>DHCP from the Ethernet library:</li>
+<li>no start delay;</li>
+<li>DISCOVER every 1 s;</li>
+<li>no check of the leased address and no DECLINE;</li>
+<li>renewals in the wrong format;</li>
+<li>no rebind.</li>
+<li>TCP gives up after 18.4 s (the library's register defect, §5.19).</li>
+<li>Every HTTP method is served as GET, HEAD gets a body, and malformed requests get no answer.</li>
+</ul>
+</li>
+</ul>
+<p><strong>Corrections after the runs</strong> (all listed in the results file): tool errors in the first v3.1 run (C3, L2/L3, H3, D3–D5, T6) were fixed and the phases re-run or re-analysed before v2.2 was run. C7 had a criterion error, flagged as an amendment after data. <strong>v2.2's MAC item (M3) was first scored FAIL</strong> because the sketch has one constant MAC; in production that constant is set per unit before flashing (Expromo's MA-S block; unit 3 left the workshop with <code>…90:58</code>). It was rescored PASS.</p>
+<p><strong>What the suite doesn't measure:</strong> recovery from the field mechanisms (§6). Conformance and robustness are separate questions; v3.1's main gain is on the second.</p>
 <hr />
 <h2>6. Discussion</h2>
 <p><strong>What explains the field symptom.</strong> The total loss (no ping, no ARP) can only come from the W5500 not answering at all:</p>
@@ -723,7 +908,7 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <th>Mechanism</th>
 <th>Matches</th>
 <th>v2.2 recovers</th>
-<th>v3.0 recovers</th>
+<th>v3.0 / v3.1 recovers</th>
 <th>Trigger</th>
 </tr>
 </thead>
@@ -739,7 +924,7 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <td>W5500 loses its settings</td>
 <td>exactly</td>
 <td>no</td>
-<td>yes, 3–6 s</td>
+<td>yes, 3–6 s (v3.1: 2.1–6.9 s, 10/10, outputs kept)</td>
 <td>unknown; supply dip / ESD suspected; load switching untested</td>
 </tr>
 <tr>
@@ -770,6 +955,8 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <p><strong>Why v3.0 had 0/300 deaf start-ups</strong> is open: both firmwares got a W5500 hardware reset at each DTR reset; v3.0 additionally resets the PHY in software and negotiates a second time.</p>
 <p><strong>The Arduino Ethernet library</strong> is responsible for the starvation behaviour and the one-byte-per-packet output (§5.7). v2.2 made it worse (the permanent keepalive socket) and did not compensate.</p>
 <p><strong>v3.0 assessment.</strong> It fixes the reproduced defects and mechanism (a), and it matches or beats v2.2 everywhere it was measured. Five bugs were found and fixed during two days of testing (0x11 state, DHCP address per reboot, PHY reset on link bounce, PHY recovery assuming a gateway, identical temporary MACs). That is the expected cost of a rewrite; more may remain.</p>
+<p><strong>v3.1 assessment (the current final firmware).</strong> It keeps v3.0's network layer and recovery, and adds standards conformance. On the final build every non-soak test passed, including settings loss with the outputs kept on, and v3.1 passed 46 of 56 conformance requirements against v2.2's 26. Its remaining failures are two chip limits, three small fixable items (ARP rate, <code>Host</code>, 414) and three deliberate trade-offs (DHCP from the fallback address, the 2-s send timeout, GET actions). Two bugs were found and fixed during the v3.1 work (a false conflict from the PC's own probe, and a timer in the split-command fix). <strong>It is not field-proven.</strong></p>
+<p><strong>Is v2.2 as good as v3.1 on standards?</strong> No. Several standards show FAIL for both, because one failed item fails a standard, but v2.2 fails 25 requirements against v3.1's 8. Only v2.2 lacks conflict detection, gives up on TCP after 18.4 s, deviates from RFC 2131 in its DHCP client and mishandles HTTP methods.</p>
 <hr />
 <h2>7. Limits of the evidence</h2>
 <ul>
@@ -788,6 +975,7 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 </li>
 <li><strong>The 13:05 event had one observer</strong> (the PC) and no capture, serial or switch counters; it did not recur in 133 further flaps of that port.</li>
 <li><strong>DHCP results come from one server</strong> (the M4250's own); other servers may answer v2.2's renewals differently. The strand after an outage follows from v2.2's code for any server.</li>
+<li><strong>Conformance suite:</strong> one PC as the only peer, tools written by the same author; requirements that need forged traffic (defending an address, the 10th-conflict rate limit) are not verified.</li>
 <li><strong>Not exercised in v3.0:</strong> real loads; recovery from a real deaf PHY; behaviour at 49+ days except the simulated rollover; DHCP NAK; two units on DHCP; multi-day operation.</li>
 </ul>
 <hr />
@@ -841,7 +1029,15 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <td>Unknown</td>
 </tr>
 <tr>
-<td>v3.0 prevents the field failure</td>
+<td>v3.1 passes every non-soak bench test on its final build, including settings loss with outputs kept</td>
+<td>Measured</td>
+</tr>
+<tr>
+<td>On 56 standards requirements, v3.1 passes 46 and v2.2 26; two shared failures are W5500 chip limits</td>
+<td>Measured (one bench, own tools)</td>
+</tr>
+<tr>
+<td>v3.0 / v3.1 prevents the field failure</td>
 <td>Unknown (needs a pilot)</td>
 </tr>
 </tbody>
@@ -851,14 +1047,14 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <ol>
 <li><strong>Field facts:</strong> for each failing site, DHCP or static; DHCP server/router type and whether it was down or rebooted around the failure.</li>
 <li><strong>Field check before power-cycling a dead unit:</strong> on the site switch, is the unit's MAC still in the MAC table and is its port's receive counter rising? Yes → the unit still transmits (deaf receiver); no → it lost its settings or stopped.</li>
-<li><strong>v3.0 on unit 3 (the real box), then on the showroom box with real loads:</strong> flash with the box's own MAC (<code>-DEPS_MAC_SUFFIX</code>), capacitor removed for the upload; switch the loads with the poller and flight recorder running. Any <code>REINIT</code>/<code>PHYRESET</code> count or logged W5500 re-init is the finding.</li>
+<li><strong>v3.1 by hand on unit 3, then on the showroom box with real loads:</strong> D5/D6/D9 and LEDs; real power cycles from the Netio with USB unplugged; flash with the box's own MAC (<code>-DEPS_MAC_SUFFIX</code>), capacitor removed for the upload; switch the loads with the poller and flight recorder running. Any <code>REINIT</code>/<code>PHYRESET</code> count or logged W5500 re-init is the finding.</li>
 <li><strong>Persistence of the deaf state:</strong> catch a deaf start-up on unit 2 (DTR resets, register dump, switch counters) and leave it alone for ≥ 10 min.</li>
 <li><strong>DHCP:</strong> a switch reload with the M4250 as DHCP server (the realistic outage); another DHCP server type.</li>
-<li><strong>Pilot:</strong> v3.0 + flight recorder with per-unit MACs at sites that had failures. With no failure in N unit-days, the 95 % bound is ≈ 3/N.</li>
+<li><strong>Pilot:</strong> v3.1 + flight recorder with per-unit MACs at sites that had failures. With no failure in N unit-days, the 95 % bound is ≈ 3/N.</li>
 </ol>
 <hr />
 <h2>Appendix A: documents</h2>
-<p><code>docs/network-investigation.md</code> (v2.2 analysis and early bench results) · <code>docs/v3.0.md</code> (v3.0 design, changes, test notes) · <code>docs/comparison-protocol.md</code> + <code>docs/comparison-results.md</code> · <code>docs/w5500-hang-tests.md</code> + <code>docs/w5500-hang-results.md</code> · <code>docs/eps-firmware-review.html</code> (an earlier, internal summary page) · <code>docs/HANDOVER.md</code> (bench state and how to continue).</p>
+<p><code>docs/network-investigation.md</code> (v2.2 analysis and early bench results) · <code>docs/v3.0.md</code> (v3.0 design, changes, test notes) · <code>docs/comparison-protocol.md</code> + <code>docs/comparison-results.md</code> · <code>docs/w5500-hang-tests.md</code> + <code>docs/w5500-hang-results.md</code> · <code>docs/eps-firmware-review.html</code> (an earlier, internal summary page) · <code>docs/v3.1-standards.md</code> (v3.1 changes and tests) · <code>docs/conformance-suite.md</code> + <code>docs/conformance-results.md</code> (standards suite, v3.1 vs v2.2) · <code>docs/HANDOVER.md</code> (bench state and how to continue).</p>
 <h2>Appendix B: chronology</h2>
 <div class="table-wrap"><table>
 <thead>
@@ -927,6 +1123,18 @@ Bench work 2026-10-08 13:00 – 2026-10-09 16:20 · Repo <code>daveleo/EPS</code
 <tr>
 <td>10-09 15:17–15:42</td>
 <td>DHCP tests: v2.2 restarts at renewals and strands after an outage; v3.0 recovers</td>
+</tr>
+<tr>
+<td>10-09 17:20–18:40</td>
+<td>v3.1 (standards work) on unit 3: start-up check, HTTP, DHCP, syslog; review fixes</td>
+</tr>
+<tr>
+<td>10-10 17:51–18:46</td>
+<td>v3.1 final build: every non-soak test re-run, all pass; ARP rate found</td>
+</tr>
+<tr>
+<td>10-10 19:06–19:44</td>
+<td>Conformance suite (pre-registered) on v3.1, then v2.2</td>
 </tr>
 </tbody>
 </table></div>

@@ -88,10 +88,10 @@ details[open] summary { margin-bottom: 10px; }
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs v3.0</div>
+  <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs v3.0 and v3.1 (final)</div>
   <h1>Why EPS units drop off the network: what we know so far</h1>
-  <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250. All tests pre-registered; every failure reported.</p>
-  <p class="meta">Status 2026-10-09 evening · full report: <a href="https://claude.ai/artifact/Yc1rw3SGEY3BKTsdVw8w69">EPS Network Investigation</a></p>
+  <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250; v3.1 and the standards suite on the real box, cabled to a PC. v3.0 is the network-layer rewrite; <strong>v3.1</strong> (v3.0 + standards work) <strong>is the current final firmware</strong>. All tests pre-registered; every failure reported.</p>
+  <p class="meta">Status 2026-10-10 evening · full report: <a href="https://claude.ai/artifact/Yc1rw3SGEY3BKTsdVw8w69">EPS Network Investigation</a></p>
 </header>
 
 <section aria-labelledby="h-board">
@@ -100,11 +100,12 @@ details[open] summary { margin-bottom: 10px; }
     <div class="col">
       <h3><span class="dot" style="background:var(--good)"></span>Established (measured)</h3>
       <ul>
-        <li><strong>DHCP mode:</strong> one unanswered DHCP renewal makes v2.2 restart itself; if the server is away during that restart, v2.2 stays off the network <strong>until power-cycled</strong>. v3.0 recovers by itself.</li>
-        <li>If the W5500 loses its settings, v2.2 is dead until reset; v3.0 is back in 3–6 s.</li>
+        <li><strong>DHCP mode:</strong> one unanswered DHCP renewal makes v2.2 restart itself; if the server is away during that restart, v2.2 stays off the network <strong>until power-cycled</strong>. v3.0 recovers by itself; v3.1 keeps asking (at most 64 s apart).</li>
+        <li>If the W5500 loses its settings, v2.2 is dead until reset; v3.1 is back in 2.1–6.9 s with the outputs kept on (10/10).</li>
         <li>After some link negotiations a W5500 goes deaf (link up, transmits, receives nothing).</li>
         <li>A USB/DTR reset also resets the W5500; v2.2's own watchdog restarts don't.</li>
         <li>The Arduino Ethernet library writes its retry settings to the wrong W5500 registers.</li>
+        <li><strong>Standards:</strong> v3.1 passes 46 of 56 pre-registered requirements, v2.2 26. Two failures shared by both are W5500 chip limits.</li>
       </ul>
     </div>
     <div class="col">
@@ -113,7 +114,7 @@ details[open] summary { margin-bottom: 10px; }
         <li><strong>What makes static-mode units drop off.</strong> Candidates: W5500 settings loss when real loads switch (not tested yet), deafness after a link negotiation (rare; can it last until a power cycle?).</li>
         <li>Whether failing sites ran DHCP or static, and what their DHCP server did.</li>
         <li>Why the M4250 dropped the v2.2 DHCP bindings although it ACKed their renewals.</li>
-        <li>v3.0 with real loads; v3.0 in the field.</li>
+        <li>v3.1 by hand (inputs, factory reset, LEDs, real power cycles), with real loads, and in the field.</li>
       </ul>
     </div>
     <div class="col">
@@ -133,7 +134,7 @@ details[open] summary { margin-bottom: 10px; }
   <h2 id="h-numbers">Key numbers</h2>
   <div class="tiles">
     <div class="tile"><div class="n">0 requests</div><div class="l">DHCP requests from the v2.2 units in 5.5 min after the server came back. v3.0 had its lease back in 6 s.</div><div class="c">D4 · 2026-10-09 15:35</div></div>
-    <div class="tile"><div class="n">≈ 4 min</div><div class="l">Self-restart cycle of a v2.2 unit on the M4250 DHCP server, with the server running. v3.0: no restarts.</div><div class="c">unit 3 · 13 restarts 15:44–16:25</div></div>
+    <div class="tile"><div class="n">46 vs 26</div><div class="l">Network-standard requirements passed, of 56: v3.1 vs v2.2, same pre-registered suite, same box.</div><div class="c">unit 3 · 2026-10-10 19:06–19:44</div></div>
     <div class="tile"><div class="n">1 in 134</div><div class="l">Switch-port flaps after which unit 2 went silent with its link up (97 s, then recovered by itself).</div><div class="c">95 % CI 0.02–4.1 %</div></div>
     <div class="tile"><div class="n">18 / 18</div><div class="l">Mains cuts of 0.2–10 s on the real EPS box that recovered normally (5.6–7.2 s).</div><div class="c">Netio · unit 3 · v2.2</div></div>
   </div>
@@ -142,10 +143,10 @@ details[open] summary { margin-bottom: 10px; }
 <section aria-labelledby="h-mech">
   <h2 id="h-mech">Mechanisms that reproduce the field symptom</h2>
   <div class="tw"><table>
-    <thead><tr><th>Mechanism</th><th>Applies to</th><th>v2.2</th><th>v3.0</th><th>Trigger in the field</th><th>Evidence</th></tr></thead>
+    <thead><tr><th>Mechanism</th><th>Applies to</th><th>v2.2</th><th>v3.0 / v3.1</th><th>Trigger in the field</th><th>Evidence</th></tr></thead>
     <tbody>
       <tr><td><strong>DHCP strand</strong>: unanswered renewal → v2.2 restart → no server for 60 s → static fallback, never asks again</td><td>units in DHCP mode</td><td><span class="chip c-crit">dead until power cycle</span></td><td><span class="chip c-good">recovers by itself</span></td><td>DHCP server or router down, rebooting or slow at renewal time</td><td>Measured (one server)</td></tr>
-      <tr><td><strong>W5500 loses its settings</strong> (MAC, IP, gateway back to zero)</td><td>all units</td><td><span class="chip c-crit">dead until reset</span></td><td><span class="chip c-good">back in 3–6 s</span></td><td>supply dip or ESD suspected; load switching <strong>not tested yet</strong></td><td>Measured (effect injected)</td></tr>
+      <tr><td><strong>W5500 loses its settings</strong> (MAC, IP, gateway back to zero)</td><td>all units</td><td><span class="chip c-crit">dead until reset</span></td><td><span class="chip c-good">back in 2–7 s</span></td><td>supply dip or ESD suspected; load switching <strong>not tested yet</strong></td><td>Measured (effect injected)</td></tr>
       <tr><td><strong>W5500 deaf after a link negotiation</strong> (link up, transmits, receives nothing)</td><td>all units</td><td><span class="chip c-warn">unknown beyond 60 s</span></td><td><span class="chip c-warn">avoided 0/300 (not proven)</span></td><td>anything that renegotiates the link: switch reboot, power event, cable; ~1 in 130 on one board</td><td>Measured (rate preliminary)</td></tr>
       <tr><td>Socket starvation (two idle connections)</td><td>all units</td><td><span class="chip c-neutral">control port dead, ping works</span></td><td><span class="chip c-good">never starves</span></td><td>browsers, half-open controller connections</td><td>Measured; not the full symptom</td></tr>
     </tbody>
@@ -184,11 +185,55 @@ details[open] summary { margin-bottom: 10px; }
 
 <section aria-labelledby="h-ab">
   <h2 id="h-ab">v2.2 vs v3.0 under normal controller load</h2>
-  <p class="note">Pre-registered A/B crossover, 2026-10-08: 6 load-test runs per firmware on two boards, swapped halfway. Bars span the best and worst run.</p>
+  <p class="note">Pre-registered A/B crossover, 2026-10-08: 6 load-test runs per firmware on two boards, swapped halfway. Bars span the best and worst run. v3.1 keeps this network layer; its final build answered 541 of 541 requests in the load test and 800 of 800 probes with idle connections held open.</p>
   <div class="figure">
     <div class="legend"><span><i class="sw" style="background:var(--v22)"></i>v2.2</span><span><i class="sw" style="background:var(--v30)"></i>v3.0</span></div>
     <div class="small-multiples" id="ab"></div>
   </div>
+</section>
+
+<section aria-labelledby="h-v31">
+  <h2 id="h-v31">v3.1 final build: every short test re-run</h2>
+  <p class="note">Unit 3 (the real box), 2026-10-10 17:51–18:46, commit <code>5284db6</code> (31,120 B flash). Long soak runs were not repeated.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Test</th><th>Result</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>DHCP: no server, lease, renewals, expiry, address in use (DECLINE ×4), free address</td><td>every step as RFC 2131 requires</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>Static start-up with conflict check, 3 resets</td><td>3 probes, 2 announcements, no false conflict</td><td><span class="chip c-good">pass ×3</span></td></tr>
+      <tr><td>HTTP / TCP checks</td><td>21 of 21</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>Persistent controller connections</td><td>6 of 6; with every control socket held, a new client is served in 0.02 s</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>Idle connections held open (0–5 per port)</td><td>800 of 800 probes answered</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>W5500 loses its settings</td><td>10 of 10 back in 2.1–6.9 s; outputs stayed on</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>Main-loop hang</td><td>3 of 3 watchdog restarts, answering ~25 s later</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>10 Mbps half duplex under load</td><td>TCP 1,086 of 1,086; one ping lost in each of 2 runs</td><td><span class="chip c-good">pass</span></td></tr>
+      <tr><td>millis() rollover, syslog, stack (243 B free at the lowest)</td><td>all pass</td><td><span class="chip c-good">pass</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-std">
+  <h2 id="h-std">Network standards: v3.1 vs v2.2</h2>
+  <p class="note">56 requirements from 10 standards, pass criteria committed before either firmware was run, same tool and same box for both (2026-10-10). One bar per firmware and standard; each block is one requirement. A standard passes only if none of its requirements fails.</p>
+  <div class="figure">
+    <div class="legend"><span><i class="sw" style="background:var(--good)"></i>pass</span><span><i class="sw" style="background:var(--crit)"></i>fail</span><span><i class="sw" style="background:var(--neutral)"></i>not verified</span><span><i class="sw" style="background:var(--grid);border:1px solid var(--rule)"></i>not applicable</span></div>
+    <div class="scroll"><svg id="std" role="img" aria-label="Requirements passed and failed per standard, v2.2 and v3.1" viewBox="0 0 1000 585" style="min-width:680px;width:100%;height:auto"></svg></div>
+    <details><summary>Show as a table</summary><div class="tw"><table id="std-table"><thead><tr><th>Standard</th><th>Firmware</th><th class="num">Pass</th><th class="num">Fail</th><th class="num">Not verified</th><th class="num">N/A</th><th>Failed items</th><th>Verdict</th></tr></thead><tbody></tbody></table></div></details>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Why it fails</th><th>v2.2</th><th>v3.1</th><th>Fixable?</th></tr></thead>
+    <tbody>
+      <tr><td>W5500 ping responder corrupts echo data after byte 119; no IP fragment reassembly</td><td>fail</td><td>fail</td><td>no: chip limit</td></tr>
+      <tr><td>~20 ARP requests in 4 s to an absent gateway, once a minute (v2.2: 8 in 0.5 s every 30 s)</td><td>fail</td><td>fail</td><td>yes, small</td></tr>
+      <tr><td>No 400 without <code>Host</code>; no 414 for an over-long URL</td><td>fail</td><td>fail</td><td>yes, small</td></tr>
+      <tr><td>Power switched by GET links (web page, control systems)</td><td>fail</td><td>fail</td><td>kept on purpose</td></tr>
+      <tr><td>Stalled receiver dropped (v3.1 after 2 s, so power control can't be held up)</td><td>fail</td><td>fail</td><td>kept on purpose</td></tr>
+      <tr><td>DHCP requests not from 0.0.0.0 while without a lease (v3.1: from its fallback address, to stay reachable)</td><td>fail</td><td>fail</td><td>kept on purpose</td></tr>
+      <tr><td>No address conflict detection; took an address in use</td><td>fail</td><td>pass</td><td>done in v3.1</td></tr>
+      <tr><td>DHCP: no start delay, DISCOVER every 1 s, no lease check or DECLINE, wrong renew format, no rebind</td><td>fail</td><td>pass</td><td>done in v3.1</td></tr>
+      <tr><td>TCP gives up after 18.4 s (library register defect)</td><td>fail</td><td>pass (102 s)</td><td>done in v3.1</td></tr>
+      <tr><td>Every HTTP method served as GET, HEAD with body, no answer to malformed requests</td><td>fail</td><td>pass</td><td>done in v3.1</td></tr>
+    </tbody>
+  </table></div>
 </section>
 
 <section aria-labelledby="h-events">
@@ -219,6 +264,7 @@ details[open] summary { margin-bottom: 10px; }
       <tr><td>v3.0 avoids deaf start-ups because v2.2 never resets the PHY</td><td>Both get a W5500 reset; v3.0 negotiates a second time. Why v3.0 had 0/300 is open</td></tr>
       <tr><td>v2.2 retries 3 times in ~1.4 s</td><td>The library writes the wrong registers: the W5500 runs with 72 ms × 8 retries</td></tr>
       <tr><td>"Dead until reset" for deaf start-ups</td><td>Never watched beyond 60 s; one deaf event cleared by itself after 97 s</td></tr>
+      <tr><td>Standards suite: v2.2 gives every unit the same MAC</td><td>The MAC in the v2.2 sketch is set per unit before flashing (Expromo's IEEE block); v2.2 passes IEEE 802 MAC addressing</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -230,7 +276,8 @@ details[open] summary { margin-bottom: 10px; }
     <tbody>
       <tr><td>Field facts: DHCP or static per failing site; DHCP server type; outages around the failures</td><td>whether the DHCP strand explains the field cases</td></tr>
       <tr><td>Before power-cycling a dead unit: is its MAC still in the site switch's MAC table, is its port receiving?</td><td>deaf receiver (still transmits) vs settings lost</td></tr>
-      <tr><td>v3.0 on the real box here, then the showroom box with real loads (flight recorder running)</td><td>whether load switching makes the W5500 lose its settings (v3.0 logs each re-init)</td></tr>
+      <tr><td>v3.1 by hand on the real box: inputs, factory reset, LED colours, real power cycles with USB unplugged</td><td>the checks the bench scripts can't do</td></tr>
+      <tr><td>v3.1 on the showroom box with real loads (flight recorder running)</td><td>whether load switching makes the W5500 lose its settings (v3.1 logs each re-init)</td></tr>
       <tr><td>Catch a deaf start-up on unit 2 and leave it alone ≥ 10 min</td><td>whether deafness lasts until a power cycle</td></tr>
     </tbody>
   </table></div>
@@ -357,6 +404,53 @@ details[open] summary { margin-bottom: 10px; }
     tr.innerHTML = `<td>${d.lab}</td><td>${d.fw}</td><td class="num">${d.k} / ${d.n}</td><td class="num">${rate} %</td><td class="num">${d.lo} – ${d.hi} %</td>`;
     rtb.appendChild(tr);
   });
+
+  /* ---------- standards: one block per requirement ---------- */
+  const STD = [
+    { n: "IEEE 802.3 Ethernet",          v22: { p: 4 },                 v31: { p: 4 } },
+    { n: "IEEE 802 MAC addressing",      v22: { p: 3 },                 v31: { p: 3 } },
+    { n: "RFC 826 ARP",                  v22: { p: 2 },                 v31: { p: 2 } },
+    { n: "RFC 1122 host requirements",   v22: { p: 3, f: 3, fi: "H2, H3 (chip), H6" }, v31: { p: 3, f: 3, fi: "H2, H3 (chip), H6" } },
+    { n: "RFC 5227 conflict detection",  v22: { f: 6, nv: 1, na: 1, fi: "C1–C5, C7" }, v31: { p: 6, nv: 2 } },
+    { n: "RFC 2131/2132 DHCP client",    v22: { p: 5, f: 7, na: 1, fi: "D1, D2, D4, D5, D6, D8, D10" }, v31: { p: 12, f: 1, fi: "D4" } },
+    { n: "TCP (RFC 9293/1122)",          v22: { p: 4, f: 2, fi: "T4, T6" },  v31: { p: 5, f: 1, fi: "T6" } },
+    { n: "HTTP (RFC 9110/9112)",         v22: { p: 4, f: 7, fi: "W1, W2, W5–W9" }, v31: { p: 8, f: 3, fi: "W7, W8, W9" } },
+    { n: "IEEE 802.1D/Q end station",    v22: { p: 1 },                 v31: { p: 1 } },
+    { n: "RFC 5424/5426 syslog",         v22: { na: 2 },                v31: { p: 2 } }
+  ];
+  const SEG = [["p", "--good", "pass"], ["f", "--crit", "fail"], ["nv", "--neutral", "not verified"], ["na", "--grid", "not applicable"]];
+  const sv = document.getElementById("std");
+  const SL = 250, SR = 820, sTop = 26, rowS = 52, unit = (SR - SL) / 13, bh = 14;
+  el("text", { x: SL, y: 14, class: "t-axis" }, sv, "one block = one requirement");
+  const stb = document.querySelector("#std-table tbody");
+  const verdict = d => (d.f ? "FAIL" : (d.p ? "PASS" : "N/A"));
+  STD.forEach((st, i) => {
+    const y0 = sTop + i * rowS;
+    el("text", { x: 0, y: y0 + 22, class: "t-lab" }, sv, st.n);
+    [["v2.2", st.v22, 6], ["v3.1", st.v31, 26]].forEach(([fw, d, dy]) => {
+      const y = y0 + dy;
+      el("text", { x: SL - 8, y: y + 11, "text-anchor": "end", class: "t-lab2" }, sv, fw);
+      let xx = SL;
+      SEG.forEach(([k, c, lab]) => {
+        const cnt = d[k] || 0;
+        for (let j = 0; j < cnt; j++) {
+          const r = el("rect", { x: xx + 1, y, width: unit - 2, height: bh, rx: 2, style: `fill:var(${c})` + (k === "na" ? ";stroke:var(--rule)" : "") }, sv);
+          attachTip(r, `<b>${st.n}</b> · ${fw}<br>${lab}` + (k === "f" && d.fi ? `<br>failed: ${d.fi}` : ""));
+          xx += unit;
+        }
+      });
+      const tot = (d.p || 0) + (d.f || 0) + (d.nv || 0) + (d.na || 0);
+      const v = verdict(d);
+      el("text", { x: xx + 8, y: y + 11, class: "t-lab2" }, sv, `${d.p || 0}/${tot} pass · ${v}`);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${st.n}</td><td>${fw}</td><td class="num">${d.p || 0}</td><td class="num">${d.f || 0}</td><td class="num">${d.nv || 0}</td><td class="num">${d.na || 0}</td><td>${d.fi || ""}</td><td>${v}</td>`;
+      stb.appendChild(tr);
+    });
+  });
+  const yT = sTop + STD.length * rowS + 8;
+  el("line", { x1: 0, x2: 1000, y1: yT - 6, y2: yT - 6, class: "gridline" }, sv);
+  el("text", { x: 0, y: yT + 12, class: "t-lab" }, sv, "Requirements passed, of 56");
+  el("text", { x: SL, y: yT + 12, class: "t-lab" }, sv, "v2.2: 26 (25 fail)   ·   v3.1: 46 (8 fail)");
 
   /* ---------- A/B small multiples ---------- */
   const ab = [
