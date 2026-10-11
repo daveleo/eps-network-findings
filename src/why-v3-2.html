@@ -1,0 +1,249 @@
+<title>Why v3.2 Should Be Official</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: decision brief for adopting v3.2; verdict first, then the change lineage, the measured v2.2-vs-v3.2 evidence, the decisive fault matrix, cost/compatibility, limits, and the case. Every claim links to where it is justified. */
+:root {
+  --page: #f4f6f6; --surface: #fcfcfb; --ink: #0f1a1d; --ink-2: #4b585c; --muted: #7c8689; --rule: #dde2e3;
+  --accent: #1d6b73; --accent-soft: #e3f0f1;
+  --v22: #eb6834; --v31: #2a78d6; --v32: #0ca30c;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b; --neutral: #a9b3b6;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --neutral: #6b7477; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --neutral: #6b7477; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--font-body); margin: 0; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 38px; }
+section { display: grid; gap: 14px; min-width: 0; }
+h1 { font: 600 2.3rem/1.1 var(--font-head); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.45rem/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.3 var(--font-head); margin: 0; }
+p { margin: 0; max-width: 72ch; }
+.eyebrow { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.lede { font-size: 1.12rem; line-height: 1.55; color: var(--ink-2); max-width: 70ch; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .9em; }
+header { display: grid; gap: 12px; }
+.why { font: 12.5px/1.4 var(--font-mono); }
+.why a { white-space: nowrap; }
+
+.verdict { background: var(--accent-soft); border: 1px solid var(--rule); border-left: 4px solid var(--accent); padding: 18px 22px; display: grid; gap: 10px; }
+.verdict p { max-width: 82ch; }
+.verdict strong { font-weight: 600; }
+
+.points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pt { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.pt .n { font: 600 1.9rem/1.1 var(--font-head); font-variant-numeric: tabular-nums; }
+.pt .l { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+
+/* lineage */
+.steps { display: grid; gap: 12px; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--c, var(--neutral)); padding: 14px 18px; display: grid; gap: 6px; }
+.step.v30 { --c: var(--v31); } .step.v31s { --c: var(--accent); } .step.v32 { --c: var(--v32); }
+.step .tag { font: 500 11.5px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.step h3 span { color: var(--ink-2); font-weight: 400; font-size: .85em; }
+.step p { font-size: 14px; }
+
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--page); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td strong { font-weight: 600; }
+.src { font: 12px/1.3 var(--font-mono); color: var(--muted); font-weight: 400; }
+th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-mono); padding: 4px 8px; border: 1px solid var(--rule); border-radius: 999px; white-space: nowrap; background: var(--page); color: var(--ink); }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--neutral)); }
+.c-good { --c: var(--good); } .c-warn { --c: var(--warn); } .c-crit { --c: var(--crit); } .c-neutral { --c: var(--neutral); }
+
+/* fault matrix mini */
+.fm { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 14px; }
+.fm .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.fm .legend i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+.grid { display: grid; grid-template-columns: 180px 1fr 1fr 1fr; gap: 4px 10px; font-size: 13px; align-items: center; min-width: 560px; }
+.gridwrap { overflow-x: auto; }
+.grid .hd { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
+.grid .f { color: var(--ink-2); }
+.cell { height: 18px; border-radius: 3px; }
+.cell.dead { background: var(--crit); } .cell.latent { background: var(--warn); } .cell.ok { background: var(--v32); } .cell.live { background: var(--v31); }
+
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul, .box ol { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; font-size: 14px; }
+.box.case { border-left: 4px solid var(--v32); }
+.docs { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; }
+
+@media (max-width: 820px) { .points { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } h1 { font-size: 1.85rem; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Expromo EPS power sequencer · the case for firmware 3.2</div>
+  <h1>Why v3.2 should be the official firmware</h1>
+  <p class="lede">v3.2 is the first firmware that, on the bench, recovers by itself from every failure we could reproduce — including the one that matches the field dropout exactly. It is v3.1 (already a large, tested step up over v2.2) plus a wider self-check, at a cost of 118 bytes and no change to anything a customer or control system sees. This page lays out the tested, unbiased evidence and links to where each decision is justified.</p>
+  <p class="meta">Status 2026-10-11 · Bench: one real EPS box (10 V supply, six SSRs) cabled to a PC, and three units on a NETGEAR M4250 · All tests pre-registered, every trial reported</p>
+</header>
+
+<section aria-labelledby="h-verdict">
+  <h2 id="h-verdict">Recommendation</h2>
+  <div class="verdict">
+    <p><strong>Adopt v3.2 as the official EPS firmware, in place of v2.2 (field) and v3.1 (current final).</strong></p>
+    <p>v2.2 drops off the network — no ping, no web page, no control until a power cycle — and we reproduced several defects that each produce that state. v3.1 already recovers from all of them by itself, usually within seconds, and passes 46 of 56 network-standard requirements against v2.2's 26. v3.2 closes the last gap we found on the bench: four single-register chip faults that fell <em>outside</em> v3.1's self-check and left it dead — among them a PHY power-down that reproduces the field symptom exactly. In the re-run, <strong>v3.2 recovered from all 14 faults, with no "dead" outcome anywhere, no change to the outputs, and no instability in normal running</strong>, for +118 bytes of flash and three extra chip reads every five seconds.</p>
+    <p>This is a bench result. It does not, on its own, prove the field dropouts are over — the trigger for static-mode units is still open and the hardware-side checks are pending. It does mean v3.2 strictly dominates both older firmwares on every measurement we have, with no regression and nothing a rollback couldn't undo. <strong>The recommended path is: make v3.2 official, then confirm it in the pilot.</strong></p>
+  </div>
+  <div class="points">
+    <div class="pt"><div class="n">14 / 14</div><div class="l">single-register chip faults that v3.2 recovered from (3 trials each). v3.1 died on 4; v2.2 was dead or stuck on 12.</div></div>
+    <div class="pt"><div class="n">11–12 s</div><div class="l">for v3.2 to come back from a PHY power-down — the fault that matches the field symptom — with no power cycle. v2.2 and v3.1: never.</div></div>
+    <div class="pt"><div class="n">+118 B</div><div class="l">total cost in program memory (now 97 % of the chip). Outputs, timing, inputs, LEDs, the control protocol and all settings are unchanged.</div></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-lineage">
+  <h2 id="h-lineage">How the firmware got from 2.2 to 3.2</h2>
+  <p>Each version kept everything the control systems and installers rely on and changed only the network layer. Every step was driven by a tested finding.</p>
+  <div class="steps">
+    <div class="step v30">
+      <div class="tag">v2.2 → v3.0 · own network driver</div>
+      <h3>Replace the Arduino Ethernet library <span>with a driver written for the W5500</span></h3>
+      <p>v2.2 shares four connections across everything, never notices if the network chip loses its settings, and blocks for up to a minute on DHCP. v3.0 gives each service its own hardware socket, checks the chip every 5 s and re-initialises it, never blocks, and keeps a flight-recorder log.</p>
+      <p class="why">Why: <a href="findings.html#h-mech">socket starvation &amp; chip-settings loss (findings)</a> · <a href="findings.html#h-ab">v2.2 vs v3.0 under load (findings)</a> · full report §5.1–5.11</p>
+    </div>
+    <div class="step v31s">
+      <div class="tag">v3.0 → v3.1 · network standards</div>
+      <h3>Make it behave like a standard device on an enterprise network</h3>
+      <p>RFC 2131 DHCP timing and address decline, RFC 5227 address-conflict detection, RFC 1122 TCP timers, correct HTTP method handling, optional syslog — plus review fixes. This is what lets it share a managed network without restarting itself or taking an address in use.</p>
+      <p class="why">Why: <a href="findings.html#h-dhcp">the DHCP strand (findings)</a> · <a href="findings.html#h-std">standards per requirement (findings)</a> · <a href="executive-summary.html#h-standards">standards: v3.1 vs v2.2 (summary)</a> · full report §5.22–5.23</p>
+    </div>
+    <div class="step v32">
+      <div class="tag">v3.1 → v3.2 · wider self-check</div>
+      <h3>Watch the chip registers a single glitch can corrupt</h3>
+      <p>v3.1 checks five registers every 5 s (chip version, IP, MAC, mask, gateway). A pre-registered fault matrix showed four faults fall outside that check and leave v3.1 dead: a ping block, the retry count at zero, a forced slow link, and a PHY power-down — the last one the exact field symptom. v3.2 adds the mode, retransmission and PHY registers to the same 5 s check and re-initialises on a mismatch, exactly as it already does for a bad address.</p>
+      <p class="why">Why: <a href="findings.html#h-faults">the 14-fault matrix (findings)</a> · <a href="findings.html#h-corr">corrections to earlier conclusions (findings)</a> · full report §5.24</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-measured">
+  <h2 id="h-measured">What the bench measured: v2.2 vs v3.2</h2>
+  <p>Pre-registered tests, every trial reported. The network-layer results were measured on v3.0/v3.1, which v3.2 contains unchanged; the chip-health and fault-matrix rows are v3.2's own measurements. Each row links to where it is described in full.</p>
+  <div class="tw"><table>
+    <thead><tr><th>What was tested</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Availability under normal controller load (6 runs, 2 boards)</td><td class="num">84.2–86.6 %</td><td class="num"><strong>99.9–100 %</strong></td><td class="why"><a href="findings.html#h-ab">findings</a></td></tr>
+      <tr><td>Control reply, 99th percentile</td><td class="num">1,031–1,532 ms</td><td class="num"><strong>31–47 ms</strong></td><td class="why"><a href="findings.html#h-ab">findings</a></td></tr>
+      <tr><td>Longest control-port outage per 5-min run</td><td class="num">79–121 s</td><td class="num"><strong>0 s</strong></td><td class="why"><a href="findings.html#h-mech">findings</a></td></tr>
+      <tr><td>Idle / half-open connections (up to 5 per port)</td><td>control port dead from 1–2</td><td><strong>800 of 800 answered</strong></td><td class="why"><a href="findings.html#h-mech">findings</a></td></tr>
+      <tr><td>Network chip loses its settings</td><td><span class="chip c-crit">dead until reset (4/4)</span></td><td><span class="chip c-good">back in seconds, outputs kept</span></td><td class="why"><a href="findings.html#h-mech">findings</a></td></tr>
+      <tr><td>DHCP: one unanswered renewal, server away at restart</td><td><span class="chip c-crit">stranded until power cycle</span></td><td><span class="chip c-good">recovers by itself</span></td><td class="why"><a href="findings.html#h-dhcp">findings</a></td></tr>
+      <tr><td><strong>14 single-register chip faults</strong> (3 trials each, real box)</td><td>dead or stuck on <strong>12 of 14</strong></td><td><strong>recovers from all 14</strong>, no dead outcome</td><td class="why"><a href="findings.html#h-faults">findings</a></td></tr>
+      <tr><td>— of which: PHY power-down (matches the field symptom)</td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">back 11–12 s, no reset</span></td><td class="why"><a href="findings.html#h-faults">findings</a></td></tr>
+      <tr><td>Start-up after a reset (real box, ×200)</td><td class="num">200/200, 0 deaf</td><td class="num">200/200, 0 deaf</td><td class="why"><a href="findings.html#h-faults">findings</a></td></tr>
+      <tr><td>Network-standard requirements passed, of 56</td><td class="num">26</td><td class="num"><strong>46</strong></td><td class="why"><a href="findings.html#h-std">findings</a></td></tr>
+      <tr><td>5 h side by side, ping + control every second</td><td>no failures; worst reply 625 ms</td><td>no failures; worst reply 16 ms</td><td class="why"><a href="report.html">report</a></td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">The 56-requirement standards count is identical for v3.1 and v3.2: the health-check change does not touch conformance. The two shared standards failures are limits of the W5500 chip itself, which no firmware on this board can change.</p>
+</section>
+
+<section aria-labelledby="h-matrix">
+  <h2 id="h-matrix">The decisive test: the 14-fault matrix</h2>
+  <p>A real SPI glitch or an ESD event is more likely to flip a <strong>single</strong> chip register than to reset the whole chip. The pre-registered fault matrix wrote one fault at a time into the real box's own chip — the firmware pokes its own register, the PC sends only ping, a control command and a web request, no crafted traffic — and watched every service for 120 s, three trials per fault, on each firmware. This is the test that separates v3.2 from v3.1.</p>
+  <div class="fm">
+    <div class="legend">
+      <span><i style="background:var(--v32)"></i> recovers by itself</span>
+      <span><i style="background:var(--warn)"></i> keeps running wrong (latent)</span>
+      <span><i style="background:var(--crit)"></i> dead until power cycle</span>
+    </div>
+    <div class="gridwrap"><div class="grid">
+      <div class="hd f">Fault (one register)</div><div class="hd">v2.2</div><div class="hd">v3.1</div><div class="hd">v3.2</div>
+
+      <div class="f">Chip reset / IP / MAC / mask</div><div class="cell dead"></div><div class="cell ok"></div><div class="cell ok"></div>
+      <div class="f">Gateway changed</div><div class="cell dead"></div><div class="cell ok"></div><div class="cell ok"></div>
+      <div class="f">Ping block (mode reg)</div><div class="cell dead"></div><div class="cell dead"></div><div class="cell ok"></div>
+      <div class="f"><strong>PHY power-down</strong> (field match)</div><div class="cell dead"></div><div class="cell dead"></div><div class="cell ok"></div>
+      <div class="f">Forced 10 Mbps half</div><div class="cell latent"></div><div class="cell latent"></div><div class="cell ok"></div>
+      <div class="f">Retry count 0</div><div class="cell dead"></div><div class="cell dead"></div><div class="cell ok"></div>
+      <div class="f">Socket faults (listeners, ports, buffer)</div><div class="cell latent"></div><div class="cell ok"></div><div class="cell ok"></div>
+    </div></div>
+    <p class="meta">Simplified; the per-trial table and the two honest caveats (ping block and PHY power-down recovered in 2 of 3 trials, the third losing a single stray ping after service was already back — a ≈0.4 %/ping artefact of the test, not service loss) are in the <a href="findings.html#h-faults">findings</a> and full report §5.24.</p>
+  </div>
+  <p>The reading is simple: v3.1 was already far ahead of v2.2, but it still died on the one fault that looks like the field failure. v3.2 turns that fault — and the three others v3.1 missed — into a self-recovery, without breaking anything v3.1 already handled and without ever leaving the box in a state that needs a power cycle.</p>
+</section>
+
+<section aria-labelledby="h-cost">
+  <h2 id="h-cost">What v3.2 costs, and what it keeps</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Cost</h3>
+      <ul>
+        <li><strong>+118 bytes of flash</strong> over v3.1 (31,238 of 32,256; 97 % full). Still fits with margin.</li>
+        <li><strong>Three extra chip reads every 5 s.</strong> No measurable effect on anything else; the health check already ran on that cycle.</li>
+        <li>One checked risk: the new PHY read could, in theory, trip a false re-init loop. It did not — zero re-inits over 90 s of steady running and across all 42 trials, with the outputs never moving.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Unchanged</h3>
+      <ul>
+        <li><strong>The TCP control protocol</strong> (<code>POWER_ON/OFF/STATUS</code>, <code>OUTx</code>): Companion, eXcontrol, Crestron and Q-SYS work as before.</li>
+        <li><strong>Outputs, sequence timing, D5/D6/D9 inputs, the RGB LED</strong> and the web page.</li>
+        <li><strong>Stored settings and the per-unit MAC</strong>; the v2.2 EEPROM layout is kept, so a downgrade to v2.2 is a straight re-flash.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-limits">
+  <h2 id="h-limits">Unbiased: what this does and doesn't prove</h2>
+  <div class="two">
+    <div class="box">
+      <h3>What we can say</h3>
+      <ul>
+        <li>On every measurement we have, v3.2 is at least as good as v3.1 and far better than v2.2, with no regression.</li>
+        <li>v3.2 recovers by itself from the single fault that reproduces the field symptom; v2.2 and v3.1 do not.</li>
+        <li>The change is small, reversible, and leaves the customer-facing behaviour identical.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>What we can't say yet</h3>
+      <ul>
+        <li>That v3.2 ends the field dropouts: we reproduced a fault that matches the symptom, not proof that this is what happens in the field. The static-mode trigger is still open.</li>
+        <li>Results rest on one real box, a direct cable, and three trials per fault — behaviour, not field rates. The same team wrote the firmware and the tests (mitigated by pre-registered criteria and crossover runs).</li>
+        <li>Brownouts, real switching loads, multi-day operation and other switch brands are not tested yet.</li>
+        <li>The rare "deaf after a link negotiation" state has only ever appeared on one board (unit 2) and not on the v3.x line (0 in 300); its persistence is still unknown.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="meta">The same limits, in full: <a href="executive-summary.html#h-limits">executive summary</a> and the full report's limits and next-steps sections.</p>
+</section>
+
+<section aria-labelledby="h-case">
+  <h2 id="h-case">The case for making v3.2 official</h2>
+  <div class="box case">
+    <ol>
+      <li><strong>It dominates.</strong> v3.2 beats or equals v2.2 and v3.1 on every pre-registered bench measurement, and is the only one that recovers from the field-matching fault.</li>
+      <li><strong>It is cheap and safe.</strong> +118 bytes, no protocol or settings change, and a one-step rollback to v2.2 if ever needed.</li>
+      <li><strong>It leaves evidence.</strong> If a v3.2 unit ever does drop off, its log records the reason (link, chip, DHCP, conflict, restart) — so the pilot can confirm or refute the mechanism instead of guessing.</li>
+      <li><strong>The remaining unknowns are hardware-side</strong> (brownout, loads, field trigger) and no firmware version answers them from the bench — they need the pilot, which should run on the best firmware we have.</li>
+    </ol>
+    <p class="meta">Recommended next steps: adopt v3.2, flash per-unit MACs, run the hands-on and real-load checks, then pilot on units at sites that had dropouts. Full plan: <a href="executive-summary.html#h-rollout">rollout (executive summary)</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-docs">
+  <h2 id="h-docs">The rest of the investigation</h2>
+  <div class="docs">
+    <a href="executive-summary.html">Executive summary</a>
+    <a href="findings.html">Findings at a glance (charts and statistics)</a>
+    <a href="report.html">Full investigation report</a>
+  </div>
+</section>
+</div>

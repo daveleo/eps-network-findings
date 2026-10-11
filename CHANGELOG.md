@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-11 — New page: "Why v3.2 should be official"
+- Added a fourth document, `why-v3-2.html`: a decision brief making the scientifically grounded, unbiased case for adopting v3.2. Verdict/recommendation first, then the v2.2 → v3.0 → v3.1 → v3.2 change lineage (each step tied to the finding that drove it), a tested v2.2-vs-v3.2 comparison table, a simplified view of the 14-fault matrix, cost/compatibility, honest limits, and the case for adoption.
+- Every claim links to the section of the other pages that justifies it (findings `#h-ab`, `#h-mech`, `#h-dhcp`, `#h-faults`, `#h-std`, `#h-corr`; executive summary `#h-standards`, `#h-limits`, `#h-rollout`; full report).
+- `build.py` now builds four pages and the nav carries "Why v3.2"; landing page leads with the new brief (status 2026-10-11).
+
 ## 2026-10-11 (round 2) — v3.2 fault-matrix results; v3.2 recommended
 - All three pages updated with the measured v3.2 results. Findings: the single-register fault table gains a v3.2 column — v3.2 recovers from all 14 faults, including the four v3.1 died on (ping block, retry count 0, forced 10-half and the field-matching PHY power-down, back in 11–12 s with no reset); no dead outcome anywhere, outputs never moved, no false re-init in steady state.
 - The two tail-only FAILs noted honestly as the stray-ping check (it also fired on faults that cannot affect ping), not service loss.

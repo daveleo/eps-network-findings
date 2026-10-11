@@ -27,7 +27,8 @@ p { margin: 0; max-width: 70ch; }
 .lede { font-size: 1.08rem; color: var(--ink-2); }
 .meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
 header { display: grid; gap: 12px; }
-.docs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.docs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.doc.lead { grid-column: 1 / -1; border-left: 4px solid var(--accent); }
 .doc { background: var(--surface); border: 1px solid var(--rule); padding: 20px; display: grid; gap: 10px; align-content: start; text-decoration: none; color: inherit; min-width: 0; }
 .doc:hover, .doc:focus-visible { border-color: var(--accent); outline: none; }
 .doc .for { font: 500 11.5px/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -40,16 +41,22 @@ header { display: grid; gap: 12px; }
 <style>body{margin:0}nav a{color:var(--accent)}</style>
 </head>
 <body>
-<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="why-v3-2.html">Why v3.2</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
 
 <div class="wrap">
 <header>
   <div class="eyebrow">Expromo · EPS power sequencer</div>
-  <h1>Why EPS units drop off the network, and what firmware 3.1 changes</h1>
-  <p class="lede">EPS units on firmware v2.2 sometimes stop answering on the network until their power is cycled. These documents describe the bench investigation (three days, three units, a NETGEAR M4250 switch), what it found, the rewritten firmware (3.0) and the current final firmware 3.1, including a network-standards comparison with v2.2.</p>
-  <p class="meta">Status 2026-10-10 · Expromo Product Department</p>
+  <h1>Why EPS units drop off the network, and the firmware that fixes it</h1>
+  <p class="lede">EPS units on firmware v2.2 sometimes stop answering on the network until their power is cycled. These documents describe the bench investigation (three units, a NETGEAR M4250 switch and a real EPS box), what it found, the rewritten firmware, and the case for making <strong>v3.2</strong> the official firmware — the first that recovers by itself from every failure we could reproduce, including the one that matches the field dropout.</p>
+  <p class="meta">Status 2026-10-11 · Expromo Product Department</p>
 </header>
 <div class="docs">
+  <a class="doc lead" href="why-v3-2.html">
+    <span class="for">Start here · the recommendation</span>
+    <h2>Why v3.2 should be official</h2>
+    <p>The decision brief: what changed from v2.2 to v3.2, the tested side-by-side evidence, the fault matrix that settles it, the cost and compatibility, the honest limits, and the case for adoption. Links into the detail behind each point.</p>
+    <span class="len">One page · decision brief</span>
+  </a>
   <a class="doc" href="executive-summary.html">
     <span class="for">For decision makers and IT</span>
     <h2>Executive summary</h2>
