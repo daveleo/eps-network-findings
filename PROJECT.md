@@ -35,9 +35,11 @@ Edit or replace a page in `src/` (the report comes from `EPS/docs/report.md` via
 
 ## Current state
 
-Updated 2026-10-10: all three pages present v3.1 as the current final firmware, with the final-build re-run and the pre-registered standards suite (v3.1 46 of 56 requirements, v2.2 26). First version published 2026-10-09.
+Updated 2026-10-11 (round 2): all three pages carry the single-register fault matrix for all three firmwares, the 200× reset start-up result, and the **tested** v3.2 candidate. v3.2 widens v3.1's 5 s health check to the mode, retry and PHY registers; on the same 14-fault matrix it recovered from all 14 faults — including the PHY power-down that matches the field symptom (11–12 s, no reset) — with no dead outcome and the outputs never moving, for +118 bytes of flash. The pages now recommend v3.2 as the field candidate in place of v3.1. Earlier: 2026-10-10 the standards suite (v3.1 46 of 56, v2.2 26); first published 2026-10-09.
 
 ## Milestones
 
 - [x] 2026-10-09 — Site published with the three documents
 - [x] 2026-10-10 — Pages updated for v3.1 (final) and the standards comparison
+- [x] 2026-10-11 — Pages updated (round 1): fault matrix, reset start-up, v3.2 candidate (built)
+- [x] 2026-10-11 — Pages updated (round 2): v3.2 fault-matrix results, v3.2 recommended as the field candidate

@@ -134,11 +134,11 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
       <tr><td>Silent start-up after a reset (same board)</td><td class="num">4 in 536</td><td class="num v31">0 in 300 (suggestive, not proven) <span class="src">v3.0</span></td></tr>
       <tr><td>5 h side by side, ping and control every second</td><td>no failures; worst reply 625 ms</td><td class="v31">no failures; worst reply 16 ms <span class="src">v3.0</span></td></tr>
       <tr><td>Main-loop hang</td><td>watchdog restart</td><td class="v31">watchdog restart, answering ~25 s later (3/3) <span class="src">v3.1</span></td></tr>
-      <tr><td>Single chip-register faults (14 faults, real box)</td><td>dead or stuck on 12 of 14</td><td class="v31">repairs the 5 it checks (chip, IP, MAC, mask, gateway) in seconds; survives all socket faults <span class="src">v3.1</span></td></tr>
+      <tr><td>Single chip-register faults (14 faults, real box)</td><td>dead or stuck on 12 of 14</td><td class="v31">v3.1 repairs the 5 it checks in seconds &amp; survives all socket faults, but dies on 4 (incl. PHY power-down); <strong>v3.2 recovers from all 14</strong> <span class="src">v3.1 / v3.2</span></td></tr>
       <tr><td>Start-up after a USB reset (real box, ×200)</td><td class="num">200/200, 0 deaf</td><td class="num v31">200/200, 0 deaf <span class="src">v3.1</span></td></tr>
     </tbody>
   </table></div>
-  <p class="meta"><strong>Candidate v3.2 (built, under test):</strong> four single-register faults — including a PHY power-down that reproduces the field symptom exactly — fall outside v3.1's 5 s self-check and leave it dead. v3.2 widens the check to those registers so it recovers from them too. It compiles and is being tested against the same fault set; v3.1 remains the final firmware until it proves out.</p>
+  <p class="meta"><strong>Candidate v3.2 (tested, recommended):</strong> four single-register faults — including a PHY power-down that reproduces the field symptom exactly — fell outside v3.1's 5 s self-check and left it dead. v3.2 widens the check to those registers. Run against the same 14-fault matrix on the real box, it recovered from every one, including the PHY power-down (back in 11–12 s with no reset), with no dead outcome and the outputs never moving — for +118 bytes of flash. On these results v3.2 replaces v3.1 as the field candidate; the open items (brownout, real loads) are hardware-side and unchanged.</p>
   <p class="meta">v3.0's one recorded miss: a single lost ping in 6 load-test runs. Every bug found during testing was fixed and is listed in the full report.</p>
 </section>
 
