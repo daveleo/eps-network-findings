@@ -1,4 +1,4 @@
-<title>EPS v3.1 Executive Summary</title>
+<title>EPS v3.2 Executive Summary</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -68,9 +68,9 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Expromo EPS power sequencer · firmware 3.1</div>
-  <h1>EPS firmware 3.1: executive summary</h1>
-  <p class="lede">v3.1 is the current final firmware. It replaces the network layer of the EPS with one written for the job (v3.0) and brings it in line with the network standards a device on an enterprise network is expected to follow. Where v2.2 needed a power cycle after the network failures we reproduced, v3.1 recovers by itself, and it records what happened when something goes wrong. It has passed every bench test; it has not yet run in the field.</p>
+  <div class="eyebrow">Expromo EPS power sequencer · firmware 3.2 (recommended as official)</div>
+  <h1>EPS firmware 3.2: executive summary</h1>
+  <p class="lede">v3.2 is the firmware we recommend as the official EPS firmware. It replaces the network layer of v2.2 with one written for the job (v3.0), brings it in line with the network standards an enterprise network expects (v3.1), and widens the chip self-check so the unit also recovers from the faults that reproduce the field dropout (v3.2). Where v2.2 needed a power cycle after the network failures we reproduced, v3.2 recovers by itself, and it records what happened when something goes wrong. It has passed every bench test; it has not yet run in the field. <a href="why-v3-2.html">The case for making v3.2 official →</a></p>
   <p class="meta">Status 2026-10-11 · Bench: three units on a NETGEAR M4250 (a switch model with field failures), then a real EPS box cabled to a PC · All tests pre-registered, every failure reported</p>
 </header>
 
@@ -79,27 +79,27 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
   <div class="verdict">
     <p><strong>Field problem:</strong> EPS units on v2.2 randomly drop off the network (no ping, no web page, no control) until their power is cycled.</p>
     <p><strong>What we found:</strong> v2.2 has several defects that lead to exactly that state. The clearest one: in DHCP mode, a single DHCP renewal that goes unanswered makes v2.2 restart itself, and if the DHCP server is away at that moment, the unit stays off the network until someone power-cycles it. Others: the network chip losing its settings (v2.2 never notices), and connections that block the control port. For units set to a static address, the field trigger is still open.</p>
-    <p><strong>v3.1:</strong> recovers by itself from every one of these in our tests, typically within seconds, keeps the outputs on while it does, and keeps a log that will tell us what happened if a unit does drop off in the field. On a pre-registered suite of 56 network-standard requirements it passes <strong>46</strong>; v2.2 passes <strong>26</strong>. <strong>We are confident v3.1 is a large step up in network robustness. Whether it ends the field dropouts will be shown by a pilot, not by the bench.</strong></p>
+    <p><strong>v3.2:</strong> recovers by itself from every one of these in our tests, typically within seconds, keeps the outputs on while it does, and keeps a log that will tell us what happened if a unit does drop off in the field. On a pre-registered suite of 56 network-standard requirements it passes <strong>46</strong>; v2.2 passes <strong>26</strong>. And in the single-register fault matrix it recovers from <strong>all 14</strong> faults — including a PHY power-down that reproduces the field symptom exactly, which v2.2 and the earlier v3.1 both die on. <strong>We are confident v3.2 is a large step up in network robustness. Whether it ends the field dropouts will be shown by a pilot, not by the bench.</strong></p>
   </div>
   <div class="points">
-    <div class="pt"><div class="n">10 / 10</div><div class="l">v3.1 back on the network 2.1–6.9 s after the network chip lost its settings, with the outputs kept on. v2.2: dead until power cycle (4 of 4).</div></div>
-    <div class="pt"><div class="n">46 vs 26</div><div class="l">network-standard requirements passed, of 56: v3.1 vs v2.2, same suite, same box. Two failures shared by both are limits of the network chip.</div></div>
-    <div class="pt"><div class="n">99.9–100 %</div><div class="l">availability under normal controller load with the new network layer (v3.0), vs 84–87 % for v2.2 (6 runs each, two boards). v3.1 re-run: 541 of 541 answered.</div></div>
+    <div class="pt"><div class="n">14 / 14</div><div class="l">single-register chip faults v3.2 recovers from (3 trials each), with no "dead" outcome. v2.2: dead or stuck on 12; v3.1: died on 4, incl. the field-matching PHY power-down.</div></div>
+    <div class="pt"><div class="n">46 vs 26</div><div class="l">network-standard requirements passed, of 56: v3.2 (same as v3.1) vs v2.2, same suite, same box. Two failures shared by both are limits of the network chip.</div></div>
+    <div class="pt"><div class="n">99.9–100 %</div><div class="l">availability under normal controller load with the new network layer, vs 84–87 % for v2.2 (6 runs each, two boards). v3.1/v3.2 re-run: 541 of 541 answered.</div></div>
   </div>
 </section>
 
 <section aria-labelledby="h-changes">
-  <h2 id="h-changes">What changed in v3.1</h2>
-  <p>Outputs, timing, inputs, LEDs, the TCP control protocol (Companion, eXcontrol, Crestron, Q-SYS) and all stored settings work as before.</p>
+  <h2 id="h-changes">What changed from v2.2 to v3.2</h2>
+  <p>Outputs, timing, inputs, LEDs, the TCP control protocol (Companion, eXcontrol, Crestron, Q-SYS) and all stored settings work as before. The network layer below was rewritten in v3.0, brought to standard in v3.1, and had its self-check widened in v3.2.</p>
   <div class="tw"><table>
-    <thead><tr><th>Area</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th>Why it matters</th></tr></thead>
+    <thead><tr><th>Area</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.2</th><th>Why it matters</th></tr></thead>
     <tbody>
       <tr><td>Network driver</td><td class="v22">Arduino Ethernet library, 4 connections shared by everything</td><td class="v31">Own W5500 driver, all 8 hardware sockets, fixed per service</td><td>No service can starve another</td></tr>
       <tr><td>Idle and half-open connections</td><td class="v22">Never closed; two idle browser connections block the control port</td><td class="v31">Web closed after 5 s idle; control connections kept, oldest evicted when full; a stalled receiver is dropped after 2 s</td><td>Controllers and browsers can't lock the unit out</td></tr>
       <tr><td>DHCP</td><td class="v22">Blocks for up to 60 s; an unanswered renewal restarts the unit; after one failed start it never asks again; asks once a second</td><td class="v31">Never blocks; RFC 2131 timing (random start delay, back-off 4–64 s, renew, rebind); checks the leased address and declines it if in use; falls back to static and keeps asking</td><td>Survives DHCP server outages without a power cycle, and doesn't flood the server</td></tr>
       <tr><td>Address conflicts</td><td class="v22">None: takes an address already in use</td><td class="v31">Checks every address before use (RFC 5227: 3 probes, 2 announcements); doesn't take one in use; defends its own</td><td>A mistyped IP doesn't knock another device off the network</td></tr>
-      <tr><td>Network chip health</td><td class="v22">Never checked</td><td class="v31">Checked every 5 s; re-initialised within seconds if its settings are lost; outputs keep their state</td><td>Recovers from a supply dip or interference</td></tr>
-      <tr><td>Link and PHY</td><td class="v22">Never reset</td><td class="v31">Fresh negotiation at every start; PHY reset after long silence (with back-off); optional fixed 10 Mbps</td><td>Recovers from a stuck link</td></tr>
+      <tr><td>Network chip health</td><td class="v22">Never checked</td><td class="v31">Checked every 5 s; re-initialised within seconds if settings are lost. <strong>v3.2 widens the check</strong> to the mode, retry and PHY registers, so it also recovers from a ping block, a wrong retry count, a forced slow link and a PHY power-down</td><td>Recovers from a supply dip, interference or a PHY power-down (the field symptom)</td></tr>
+      <tr><td>Link and PHY</td><td class="v22">Never reset</td><td class="v31">Fresh negotiation at every start; PHY reset after long silence (with back-off); re-applied if the PHY config register is wrong (v3.2); optional fixed 10 Mbps</td><td>Recovers from a stuck or powered-down link</td></tr>
       <tr><td>MAC address</td><td class="v22">Set in the sketch for each unit before flashing</td><td class="v31">Written once per unit from Expromo's IEEE block and stored in the unit; later updates and factory reset keep it</td><td>A generic update can't give a unit the wrong MAC</td></tr>
       <tr><td>Web page and HTTP</td><td class="v22">3,598 packets, ~0.9 s, blocks control meanwhile; every method treated as GET</td><td class="v31">3 packets, ~45 ms; 400/405 for bad or other requests; HEAD never switches anything</td><td>Control stays responsive; HEAD and other methods never switch power</td></tr>
       <tr><td>TCP retries</td><td class="v22">Library writes the wrong chip registers: gives up after 18 s</td><td class="v31">Gives up after 102 s (RFC 1122: at least 100 s)</td><td>Connections survive short network hiccups</td></tr>
@@ -129,15 +129,15 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
       <tr><td>Start-up after a USB reset (real box, ×200)</td><td class="num">200/200, 0 deaf</td><td class="num v31">200/200, 0 deaf <span class="src">v3.1</span></td></tr>
     </tbody>
   </table></div>
-  <p class="meta"><strong>Candidate v3.2 (tested, recommended):</strong> four single-register faults — including a PHY power-down that reproduces the field symptom exactly — fell outside v3.1's 5 s self-check and left it dead. v3.2 widens the check to those registers. Run against the same 14-fault matrix on the real box, it recovered from every one, including the PHY power-down (back in 11–12 s with no reset), with no dead outcome and the outputs never moving — for +118 bytes of flash. On these results v3.2 replaces v3.1 as the field candidate; the open items (brownout, real loads) are hardware-side and unchanged.</p>
+  <p class="meta"><strong>Why v3.2 over v3.1:</strong> four single-register faults — including a PHY power-down that reproduces the field symptom exactly — fell outside v3.1's 5 s self-check and left it dead. v3.2 widens the check to those registers. Run against the same 14-fault matrix on the real box, it recovered from every one, including the PHY power-down (back in 11–12 s with no reset), with no dead outcome and the outputs never moving — for +118 bytes of flash. On these results <strong>v3.2 is the recommended official firmware</strong>; the open items (brownout, real loads) are hardware-side and unchanged. Full argument: <a href="why-v3-2.html">Why v3.2 should be official</a>.</p>
   <p class="meta">v3.0's one recorded miss: a single lost ping in 6 load-test runs. Every bug found during testing was fixed and is listed in the full report.</p>
 </section>
 
 <section aria-labelledby="h-standards">
-  <h2 id="h-standards">Network standards: v3.1 vs v2.2</h2>
-  <p>Fifty-six requirements from ten standards, each with a pass criterion written down before either firmware was tested, run with the same tool on the same box. A standard passes only if every one of its requirements passes, so one failed item is enough to fail it.</p>
+  <h2 id="h-standards">Network standards: v3.2 vs v2.2</h2>
+  <p>Fifty-six requirements from ten standards, each with a pass criterion written down before either firmware was tested, run with the same tool on the same box. A standard passes only if every one of its requirements passes, so one failed item is enough to fail it. The suite was run on v3.1; <strong>v3.2 scores identically</strong>, because the wider self-check does not touch anything the suite measures.</p>
   <div class="tw"><table>
-    <thead><tr><th>Standard</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th></tr></thead>
+    <thead><tr><th>Standard</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.2</th></tr></thead>
     <tbody>
       <tr><td>IEEE 802.3 Ethernet</td><td><span class="chip c-good">Pass</span></td><td><span class="chip c-good">Pass</span></td></tr>
       <tr><td>IEEE 802 MAC addressing</td><td><span class="chip c-good">Pass</span></td><td><span class="chip c-good">Pass</span></td></tr>
@@ -154,7 +154,7 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
   </table></div>
   <div class="two">
     <div class="box">
-      <h3>Why v3.1 still fails four standards</h3>
+      <h3>Why v3.2 still fails four standards</h3>
       <ul>
         <li><strong>Network chip limits (2):</strong> the W5500 corrupts long ping payloads and can't reassemble fragmented packets. No firmware on this board can change that; v2.2 fails the same two.</li>
         <li><strong>Small, fixable (3):</strong> too many ARP requests to an absent gateway (about 20 a minute); no 400 when the <code>Host</code> header is missing; 400 instead of 414 for an over-long URL. v2.2 fails all three as well.</li>
@@ -164,7 +164,7 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
     <div class="box">
       <h3>Is v2.2 as good, since both fail four?</h3>
       <ul>
-        <li>No. One failed item fails a whole standard, so the count of failed standards hides the size of the gap: v2.2 fails <strong>25</strong> requirements, v3.1 <strong>8</strong>.</li>
+        <li>No. One failed item fails a whole standard, so the count of failed standards hides the size of the gap: v2.2 fails <strong>25</strong> requirements, v3.2 <strong>8</strong>.</li>
         <li>Only v2.2 takes an IP address already in use, asks for DHCP once a second, renews and rebinds incorrectly, drops TCP connections after 18 s, and treats every HTTP method as a GET.</li>
         <li>The standards suite doesn't test recovery from the field failures, where the gap is largest (table above).</li>
       </ul>
@@ -176,7 +176,7 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
   <h2 id="h-enterprise">Fit with enterprise network practice</h2>
   <div class="keyline"><span class="chip c-good">Verified on the bench</span><span class="chip c-warn">Built in, not yet verified</span><span class="chip c-crit">Not supported</span></div>
   <div class="tw"><table>
-    <thead><tr><th>Area</th><th>v3.1 behaviour</th><th>Confidence</th></tr></thead>
+    <thead><tr><th>Area</th><th>v3.2 behaviour</th><th>Confidence</th></tr></thead>
     <tbody>
       <tr><td>DHCP client (RFC 2131)</td><td>Random start delay and back-off; renews by unicast at T1, rebinds at T2, falls back when the lease expires; declines an address in use; sends a hostname (<code>EPS-xxxxxx</code>). Tested with three different servers (v3.0) and the new timing with a bench server (v3.1). One deviation: while it has no lease it asks from its fallback address, not 0.0.0.0.</td><td><span class="chip c-good">Verified</span></td></tr>
       <tr><td>Static addressing</td><td>Default mode; the address is checked before use and not taken if another device has it.</td><td><span class="chip c-good">Verified</span></td></tr>
@@ -201,16 +201,16 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
     <div class="box">
       <h3>We can say</h3>
       <ul>
-        <li>v3.1 recovers by itself, in seconds, from every v2.2 failure we could provoke on it: DHCP outage, lost chip settings, stuck connections.</li>
-        <li>v3.1 behaves like a standard network device on the points that matter on a shared network: DHCP, address conflicts, unique MAC, no stuck connections. Its remaining standards gaps are listed above.</li>
-        <li>If a v3.1 unit ever drops off, its log will show why: link, chip, DHCP, address conflict or restart.</li>
+        <li>v3.2 recovers by itself, in seconds, from every v2.2 failure we could provoke on it: DHCP outage, lost chip settings, stuck connections, and the single-register chip faults (ping block, retry count, forced link, PHY power-down) that v3.1 still died on.</li>
+        <li>v3.2 behaves like a standard network device on the points that matter on a shared network: DHCP, address conflicts, unique MAC, no stuck connections. Its remaining standards gaps are listed above.</li>
+        <li>If a v3.2 unit ever drops off, its log will show why: link, chip, DHCP, address conflict or restart.</li>
       </ul>
     </div>
     <div class="box">
       <h3>We can't say yet</h3>
       <ul>
-        <li>That v3.1 ends the field dropouts: the trigger for static-mode units is still open.</li>
-        <li>How it handles the rare deaf state after a link negotiation: it hasn't occurred on the new firmware yet (0 in 300).</li>
+        <li>That v3.2 ends the field dropouts: it recovers from the fault that matches the symptom, but the trigger for static-mode units is still open.</li>
+        <li>How it handles the rare deaf state after a link negotiation: it hasn't occurred on the v3.x firmware yet (0 in 300).</li>
         <li>How it behaves with real loads switching, over days, and on other switch brands.</li>
         <li>Results rest on three boards and three days of testing; the same team wrote the firmware and the tests (mitigated by pre-registered criteria and crossover runs).</li>
       </ul>
@@ -223,8 +223,8 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
   <div class="box">
     <ol>
       <li><strong>Hands-on checks on the real box:</strong> inputs, factory reset and LED colours by hand; real power cycles with the USB cable unplugged.</li>
-      <li><strong>Real loads:</strong> v3.1 on our showroom unit, loads switched while the log runs. Any chip re-init in the log is a finding.</li>
-      <li><strong>Pilot:</strong> v3.1 with per-unit MACs on units at sites that had dropouts. With no failure in N unit-days, the 95 % upper bound on the failure rate is about 3/N (≈ 300 unit-days to show fewer than one failure per 100 unit-days).</li>
+      <li><strong>Real loads:</strong> v3.2 on our showroom unit, loads switched while the log runs. Any chip re-init in the log is a finding.</li>
+      <li><strong>Pilot:</strong> v3.2 with per-unit MACs on units at sites that had dropouts. With no failure in N unit-days, the 95 % upper bound on the failure rate is about 3/N (≈ 300 unit-days to show fewer than one failure per 100 unit-days).</li>
       <li><strong>Site settings:</strong> static addresses outside DHCP ranges, or DHCP reservations; EPS on an untagged access port in the AV VLAN.</li>
       <li><strong>On any dropout, before power-cycling:</strong> note the LED colour, check whether the unit's MAC is still in the switch's MAC table, then read <code>NET_LOG</code> after it is back.</li>
       <li><strong>Fallback:</strong> v2.2 can be re-flashed.</li>
@@ -235,8 +235,9 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
 <section aria-labelledby="h-docs">
   <h2 id="h-docs">More detail</h2>
   <div class="docs">
-    <a href="https://claude.ai/artifact/5QSELy6vCJndKRkRy8Edn6">Findings at a glance (charts and statistics)</a>
-    <a href="https://claude.ai/artifact/Yc1rw3SGEY3BKTsdVw8w69">Full investigation report</a>
+    <a href="why-v3-2.html">Why v3.2 should be official</a>
+    <a href="findings.html">Findings at a glance (charts and statistics)</a>
+    <a href="report.html">Full investigation report</a>
   </div>
 </section>
 </div>

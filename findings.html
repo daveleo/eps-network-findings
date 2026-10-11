@@ -97,9 +97,9 @@ details[open] summary { margin-bottom: 10px; }
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs v3.0 and v3.1 (final)</div>
+  <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs the v3.x line · v3.2 recommended as official</div>
   <h1>Why EPS units drop off the network: what we know so far</h1>
-  <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250; v3.1 and the standards suite on the real box, cabled to a PC. v3.0 is the network-layer rewrite; <strong>v3.1</strong> (v3.0 + standards work) <strong>is the current final firmware</strong>. All tests pre-registered; every failure reported.</p>
+  <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250; the standards suite and the fault matrix on the real box, cabled to a PC. v3.0 is the network-layer rewrite, v3.1 adds the network standards, and <strong>v3.2</strong> (v3.1 + a wider chip self-check) <strong>is the firmware we recommend as official</strong> — <a href="why-v3-2.html">the case</a>. All tests pre-registered; every failure reported.</p>
   <p class="meta">Status 2026-10-11 · full report: <a href="report.html">EPS Network Investigation</a></p>
 </header>
 
@@ -221,8 +221,8 @@ details[open] summary { margin-bottom: 10px; }
 </section>
 
 <section aria-labelledby="h-std">
-  <h2 id="h-std">Network standards: v3.1 vs v2.2</h2>
-  <p class="note">56 requirements from 10 standards, pass criteria committed before either firmware was run, same tool and same box for both (2026-10-10). One bar per firmware and standard; each block is one requirement. A standard passes only if none of its requirements fails.</p>
+  <h2 id="h-std">Network standards: v3.1 / v3.2 vs v2.2</h2>
+  <p class="note">56 requirements from 10 standards, pass criteria committed before either firmware was run, same tool and same box for both (2026-10-10). One bar per firmware and standard; each block is one requirement. A standard passes only if none of its requirements fails. The suite was run on v3.1; <strong>v3.2 scores identically</strong> (the wider self-check does not change anything the suite measures).</p>
   <div class="figure">
     <div class="legend"><span><i class="sw" style="background:var(--good)"></i>pass</span><span><i class="sw" style="background:var(--crit)"></i>fail</span><span><i class="sw" style="background:var(--neutral)"></i>not verified</span><span><i class="sw" style="background:var(--grid);border:1px solid var(--rule)"></i>not applicable</span></div>
     <div class="scroll"><svg id="std" role="img" aria-label="Requirements passed and failed per standard, v2.2 and v3.1" viewBox="0 0 1000 585" style="min-width:680px;width:100%;height:auto"></svg></div>

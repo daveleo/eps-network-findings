@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-11 — Reframed around v3.2 as the official firmware
+- All pages now present v3.2 (v3.1 + the wider chip self-check) as the recommended official firmware, not v3.1. Executive summary retitled to v3.2; verdict, key numbers, "what changed from v2.2 to v3.2", standards and limits/rollout updated; the chip-health and PHY rows note the v3.2 widening; links point to the new brief.
+- Findings and report headers/verdicts reframed to v3.2 (standards noted as identical for v3.1 and v3.2; the fault matrix already carried v3.2). Historical test labels (e.g. "v3.1 final build re-run", which firmware a test ran on) kept accurate.
+- Landing page cards updated; cross-document links made local.
+
 ## 2026-10-11 — New page: "Why v3.2 should be official"
 - Added a fourth document, `why-v3-2.html`: a decision brief making the scientifically grounded, unbiased case for adopting v3.2. Verdict/recommendation first, then the v2.2 → v3.0 → v3.1 → v3.2 change lineage (each step tied to the finding that drove it), a tested v2.2-vs-v3.2 comparison table, a simplified view of the 14-fault matrix, cost/compatibility, honest limits, and the case for adoption.
 - Every claim links to the section of the other pages that justifies it (findings `#h-ab`, `#h-mech`, `#h-dhcp`, `#h-faults`, `#h-std`, `#h-corr`; executive summary `#h-standards`, `#h-limits`, `#h-rollout`; full report).
