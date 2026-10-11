@@ -71,7 +71,7 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
   <div class="eyebrow">Expromo EPS power sequencer · firmware 3.1</div>
   <h1>EPS firmware 3.1: executive summary</h1>
   <p class="lede">v3.1 is the current final firmware. It replaces the network layer of the EPS with one written for the job (v3.0) and brings it in line with the network standards a device on an enterprise network is expected to follow. Where v2.2 needed a power cycle after the network failures we reproduced, v3.1 recovers by itself, and it records what happened when something goes wrong. It has passed every bench test; it has not yet run in the field.</p>
-  <p class="meta">Status 2026-10-10 · Bench: three units on a NETGEAR M4250 (a switch model with field failures), then a real EPS box cabled to a PC · All tests pre-registered, every failure reported</p>
+  <p class="meta">Status 2026-10-11 · Bench: three units on a NETGEAR M4250 (a switch model with field failures), then a real EPS box cabled to a PC · All tests pre-registered, every failure reported</p>
 </header>
 
 <section aria-labelledby="h-verdict">
@@ -125,8 +125,11 @@ th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; ma
       <tr><td>Silent start-up after a reset (same board)</td><td class="num">4 in 536</td><td class="num v31">0 in 300 (suggestive, not proven) <span class="src">v3.0</span></td></tr>
       <tr><td>5 h side by side, ping and control every second</td><td>no failures; worst reply 625 ms</td><td class="v31">no failures; worst reply 16 ms <span class="src">v3.0</span></td></tr>
       <tr><td>Main-loop hang</td><td>watchdog restart</td><td class="v31">watchdog restart, answering ~25 s later (3/3) <span class="src">v3.1</span></td></tr>
+      <tr><td>Single chip-register faults (14 faults, real box)</td><td>dead or stuck on 12 of 14</td><td class="v31">repairs the 5 it checks (chip, IP, MAC, mask, gateway) in seconds; survives all socket faults <span class="src">v3.1</span></td></tr>
+      <tr><td>Start-up after a USB reset (real box, ×200)</td><td class="num">200/200, 0 deaf</td><td class="num v31">200/200, 0 deaf <span class="src">v3.1</span></td></tr>
     </tbody>
   </table></div>
+  <p class="meta"><strong>Candidate v3.2 (built, under test):</strong> four single-register faults — including a PHY power-down that reproduces the field symptom exactly — fall outside v3.1's 5 s self-check and leave it dead. v3.2 widens the check to those registers so it recovers from them too. It compiles and is being tested against the same fault set; v3.1 remains the final firmware until it proves out.</p>
   <p class="meta">v3.0's one recorded miss: a single lost ping in 6 load-test runs. Every bug found during testing was fixed and is listed in the full report.</p>
 </section>
 

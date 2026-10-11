@@ -100,7 +100,7 @@ details[open] summary { margin-bottom: 10px; }
   <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs v3.0 and v3.1 (final)</div>
   <h1>Why EPS units drop off the network: what we know so far</h1>
   <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250; v3.1 and the standards suite on the real box, cabled to a PC. v3.0 is the network-layer rewrite; <strong>v3.1</strong> (v3.0 + standards work) <strong>is the current final firmware</strong>. All tests pre-registered; every failure reported.</p>
-  <p class="meta">Status 2026-10-10 evening · full report: <a href="report.html">EPS Network Investigation</a></p>
+  <p class="meta">Status 2026-10-11 · full report: <a href="report.html">EPS Network Investigation</a></p>
 </header>
 
 <section aria-labelledby="h-board">
@@ -260,6 +260,41 @@ details[open] summary { margin-bottom: 10px; }
       <tr><td>Unit 2's port only, mirrored and instrumented</td><td class="num">98</td><td class="num">0</td><td>2.4–5.6 s</td></tr>
       <tr><td><strong>Total</strong></td><td class="num"><strong>251</strong></td><td class="num"><strong>1</strong></td><td></td></tr>
     </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-faults">
+  <h2 id="h-faults">Single-register chip faults: which each firmware repairs (2026-10-11)</h2>
+  <p class="note">v3.1 checks five chip registers every 5 s and re-initialises if any is wrong. This test wrote <strong>one</strong> register fault at a time into the real box's own chip (a single-bit glitch is more likely than a full reset), 14 faults × 3 trials on each firmware, and watched every service for 120 s. Pre-registered; every trial reported. A fault passes only if all three trials recover with the registers restored and the outputs unmoved.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Fault (one register)</th><th><i class="sw" style="background:var(--v31,#2a78d6)"></i>v3.1</th><th><i class="sw" style="background:var(--v22,#eb6834)"></i>v2.2</th></tr></thead>
+    <tbody>
+      <tr><td>Chip soft reset (all settings zero)</td><td><span class="chip c-good">recovered 6–10 s</span></td><td><span class="chip c-crit">dead, needs power cycle</span></td></tr>
+      <tr><td>IP address changed</td><td><span class="chip c-good">recovered ≤10 s</span></td><td><span class="chip c-crit">dead</span></td></tr>
+      <tr><td>MAC address changed</td><td><span class="chip c-good">recovered 5–10 s</span></td><td><span class="chip c-crit">wrong MAC kept</span></td></tr>
+      <tr><td>Gateway changed</td><td><span class="chip c-good">repaired</span></td><td><span class="chip c-crit">wrong gateway kept</span></td></tr>
+      <tr><td>Subnet mask → /32</td><td><span class="chip c-good">recovered 4–7 s</span></td><td><span class="chip c-crit">dead</span></td></tr>
+      <tr><td>Ping block (mode register)</td><td><span class="chip c-crit">dead (ping only; TCP/web fine)</span></td><td><span class="chip c-crit">dead</span></td></tr>
+      <tr><td><strong>PHY power-down</strong> — matches the field symptom</td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-crit">dead</span></td></tr>
+      <tr><td>Link forced to 10 Mbps half</td><td><span class="chip c-warn">stays at 10 half</span></td><td><span class="chip c-warn">stays at 10 half</span></td></tr>
+      <tr><td>TCP/ARP retry count 0</td><td><span class="chip c-crit">dead (ping ok, TCP/web not)</span></td><td><span class="chip c-crit">dead</span></td></tr>
+      <tr><td>Listening sockets closed / RX buffer 0</td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td></tr>
+      <tr><td>Listening port moved (control / web)</td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-crit">that service lost</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>v3.1 repairs every register it checks (chip, IP, MAC, mask, gateway) in seconds with the outputs untouched, and survives every socket fault; v2.2 needs a power cycle for a chip reset, wrong IP or wrong mask, and keeps a wrong MAC or gateway for good. <strong>Four faults fall outside v3.1's check and leave both firmwares dead: the ping block, retry count 0, a forced 10-half link, and — the one that reproduces the field symptom exactly — PHY power-down.</strong></p>
+  <h3 style="margin-top:6px">Start-up after a reset (real box, 200 resets each)</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Firmware</th><th class="num">Resets</th><th class="num">Came up</th><th class="num">Deaf</th><th>Time to answer</th></tr></thead>
+    <tbody>
+      <tr><td>v3.1</td><td class="num">200</td><td class="num">200</td><td class="num"><strong>0</strong></td><td>median 9.1 s, max 14.3 s</td></tr>
+      <tr><td>v2.2</td><td class="num">200</td><td class="num">200</td><td class="num"><strong>0</strong></td><td>median 2.9 s, max 3.0 s</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">A USB reset also resets the network chip, so this is the closest bench proxy for a power event. Neither firmware came up deaf; the deaf start-up has only ever appeared on one of the three boards (unit 2, 4 events).</p>
+  <div class="tw" style="margin-top:4px"><table>
+    <thead><tr><th>Candidate v3.2 (built, under test)</th></tr></thead>
+    <tbody><tr><td style="white-space:normal">Widens v3.1's 5 s check to the registers it now ignores — the mode register (ping block), the retry registers, and the PHY configuration (power-down and forced mode) — and re-initialises on a mismatch, as it already does for a bad address. The aim is to recover from the four faults above, <strong>including the PHY power-down that matches the field symptom</strong>. Built and compiles; being tested against the same fault matrix. v3.1 stays the final firmware until it proves out.</td></tr></tbody>
   </table></div>
 </section>
 

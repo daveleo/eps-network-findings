@@ -2,10 +2,10 @@
 name: EPS network findings (public site)
 status: active
 priority:
-version: 2026-10-10
+version: 2026-10-11
 deadline:
 next: Share the link with IT and the original EPS developer; update the pages after the hands-on checks, real loads and pilot
-updated: 2026-10-10
+updated: 2026-10-11
 repo: daveleo/eps-network-findings
 url: https://daveleo.github.io/eps-network-findings/
 ---
