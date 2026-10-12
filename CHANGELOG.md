@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-12 — Danish pages; comparison tables wrap
+- New `hvorfor-v3-3.html` (dansk): short brief for the product manager: recommendation, three key numbers, the v2.2 problem, v2.2 → v3.3 table, why not v3.1/v3.2, what stays the same, caveats, next steps.
+- New `comparison-da.html`: Danish edition of `comparison.html`, same data (fault-matrix rows translated from the English page), links to the English pages.
+- `comparison.html`: recovery-scenario and standards tables now wrap their cell text (fixed layout) instead of forcing a horizontal scroll; "På dansk" links in the header. The "not tested yet" item on the deaf receiver corrected (it has now been seen on unit 3 too; what is untested is v3.3 acting on a real one); same correction in `why-v3-3.html`.
+- `build.py`: Danish pages (`PAGES_DA`) get `lang="da"` and a Danish nav; English nav gains "På dansk". Landing page lists both Danish pages.
+
 ## 2026-10-12 — v3.3: new brief, comparison page, everything bumped to v3.3
 - New page `why-v3-3.html`: decision brief for v3.3 (what the code analysis found, the four gaps and how v3.3 closes them, the tested evidence against v3.2, cost/compatibility, honest limits incl. the unexplained 3.5-min outage, the case).
 - New page `comparison.html`: v2.2, v3.1, v3.2 and v3.3 side by side — features, the 17-fault matrix (generated from the trial CSVs), recovery scenarios (settings loss, DHCP, PHY held in reset, stuck link, gateway gone, deaf receiver, link down, hang, start-up), standards per standard (26/46/46/48 of 56), everyday-behaviour regression.

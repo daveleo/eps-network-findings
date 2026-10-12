@@ -1,0 +1,163 @@
+<title>Hvorfor EPS v3.3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: short Danish brief for the product manager: recommendation and three numbers first, then the v2.2 problem, a v2.2-vs-v3.3 table, why not v3.1/v3.2, what stays the same vs caveats, next steps. Links to the Danish comparison and the English pages. */
+:root {
+  --page: #f4f6f6; --surface: #fcfcfb; --ink: #0f1a1d; --ink-2: #4b585c; --muted: #7c8689; --rule: #dde2e3;
+  --accent: #1d6b73; --accent-soft: #e3f0f1;
+  --v22: #eb6834; --v33: #7d4fd0;
+  --good-bg: #e2f4e2; --crit-bg: #f8e1e1;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v33: #a07ae8; --good-bg: #17301a; --crit-bg: #3a1a1a; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v33: #a07ae8; --good-bg: #17301a; --crit-bg: #3a1a1a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--font-body); margin: 0; }
+.wrap { max-width: 920px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 34px; }
+section { display: grid; gap: 14px; min-width: 0; }
+h1 { font: 600 2.2rem/1.1 var(--font-head); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.4rem/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.3 var(--font-head); margin: 0; }
+p { margin: 0; max-width: 72ch; }
+.eyebrow { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.lang { font: 13px/1.5 var(--font-mono); }
+.lede { font-size: 1.12rem; line-height: 1.55; color: var(--ink-2); max-width: 70ch; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .9em; }
+header { display: grid; gap: 12px; }
+.verdict { background: var(--accent-soft); border: 1px solid var(--rule); border-left: 4px solid var(--v33); padding: 18px 22px; display: grid; gap: 10px; }
+.points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pt { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.pt .n { font: 600 1.9rem/1.1 var(--font-head); font-variant-numeric: tabular-nums; }
+.pt .l { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--page); }
+th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+tr:last-child td { border-bottom: 0; }
+td.old { background: color-mix(in srgb, var(--v22) 5%, transparent); }
+td.new { background: color-mix(in srgb, var(--v33) 6%, transparent); }
+td strong { font-weight: 600; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul, .box ol { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; font-size: 14px; }
+.box.next { border-left: 4px solid var(--v33); }
+.docs { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; }
+@media (max-width: 820px) { .points { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } h1 { font-size: 1.8rem; } th, td { padding: 8px; font-size: 13px; overflow-wrap: break-word; hyphens: auto; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Expromo EPS power sequencer · kort orientering</div>
+  <h1>Fra v2.2 til v3.3: hvorfor vi bør bruge firmware v3.3</h1>
+  <p class="lede">Nogle EPS-bokse i felten holder op med at svare på netværket og kommer først tilbage, når de slukkes og tændes, også med fast IP-adresse. v3.3 er resultatet af undersøgelsen: boksen opdager og retter selv de netværksfejl, som v2.2 ikke kan komme ud af, og intet af det, kunden eller styresystemet ser, er ændret.</p>
+  <p class="meta">Status 12. oktober 2026 · Expromo Produktafdeling · testet på en rigtig EPS-boks mod alle tidligere versioner</p>
+  <p class="lang" lang="en">English: <a href="why-v3-3.html">Why v3.3 should be official</a> (longer brief) · <a href="comparison.html">All versions compared</a></p>
+</header>
+
+<section aria-labelledby="h-rec">
+  <h2 id="h-rec">Anbefaling</h2>
+  <div class="verdict">
+    <p><strong>Gør v3.3 til den officielle EPS-firmware i stedet for v2.2.</strong></p>
+    <p>Når netværkschippen bliver forstyrret, kommer v2.2 ikke selv tilbage, og boksen skal slukkes og tændes. v3.3 opdager og retter de samme fejl selv på få sekunder, opfylder langt flere netværksstandarder og måler sin egen strømforsyning, så vi kan finde den egentlige årsag ude i felten. Det er bænkresultater fra én rigtig boks; det er endnu ikke bevist i felten.</p>
+  </div>
+  <div class="points">
+    <div class="pt"><div class="n">17 / 17</div><div class="l">fremprovokerede fejl i netværkschippen, som v3.3 selv kommer sig efter, typisk på 3–10 s. Med v2.2 kræver 9 af 16 at boksen slukkes og tændes.</div></div>
+    <div class="pt"><div class="n">48 / 56</div><div class="l">krav fra 10 netværksstandarder, som v3.3 opfylder. v2.2 opfylder 26.</div></div>
+    <div class="pt"><div class="n">0</div><div class="l">ændringer, som kunden eller styresystemet kan se. Indstillingerne bevares, og v2.2 kan flashes tilbage.</div></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-problem">
+  <h2 id="h-problem">Problemet med v2.2</h2>
+  <div class="box">
+    <ul>
+      <li><strong>Ingen ren softwarefejl.</strong> Kodeanalysen fandt intet i v2.2, der alene får en boks med fast IP til at fryse. Noget udefra skal forstyrre netværkschippen (W5500).</li>
+      <li><strong>Men v2.2 kommer aldrig selv tilbage.</strong> Når chippen først er forstyrret, ender alle tre veje, vi har fundet, med "død, indtil den slukkes og tændes": chippen mister sine indstillinger; chippens fysiske netværksdel (PHY) går i stå; eller chippen bliver ikke fundet ved opstart, og boksen kører videre uden IP-adresse, selvom LED'en ser normal ud.</li>
+      <li><strong>Mest sandsynlige udløser: strømforsyningen.</strong> Kortets brown-out-grænse er 2,7 V (boksen rapporterer det selv), men processoren skal bruge 3,8 V og netværkschippen ca. 4 V. Et kort spændingsdyk kan derfor slå netværkschippen ud, mens processoren kører videre. Det er en hypotese, der endnu ikke er testet.</li>
+      <li><strong>v2.2 belaster også netværket unødigt:</strong> én netværkspakke pr. byte på websiden (~3.600 pr. visning), og styringsporten holder op med at svare, når to webforbindelser står åbne.</li>
+    </ul>
+  </div>
+</section>
+
+<section aria-labelledby="h-changes">
+  <h2 id="h-changes">Hvad er ændret fra v2.2 til v3.3</h2>
+  <p>Netværksdelen er skrevet om fra bunden. Alt andet (udgange, timing, indgange, LED, styringsprotokol, webadresser, gemte indstillinger) er det samme.</p>
+  <div class="tw"><table>
+    <colgroup><col style="width:28%"><col><col></colgroup>
+    <thead><tr><th>Område</th><th><i class="k" style="background:var(--v22)"></i>v2.2 (i felten i dag)</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>Fejl i netværkschippen (17 testede)</td><td class="old">død indtil sluk/tænd ved 9 af 16</td><td class="new"><strong>kommer sig selv ved alle 17</strong>, typisk på 3–10 s</td></tr>
+      <tr><td>Selvtjek af netværkschippen</td><td class="old">intet</td><td class="new">hvert 5. sekund; forkerte indstillinger sættes op igen</td></tr>
+      <tr><td>Link, der bliver nede</td><td class="old">kommer aldrig tilbage, hvis PHY'en er gået i stå</td><td class="new">PHY'en nulstilles efter 30 s, derefter med stigende interval</td></tr>
+      <tr><td>Modtager, der bliver "døv" (link oppe, men hører intet)</td><td class="old">opdages aldrig</td><td class="new">testes hvert minut; PHY'en nulstilles efter 3 tavse tjek</td></tr>
+      <tr><td>DHCP-server væk under en fornyelse</td><td class="old">strander indtil sluk/tænd</td><td class="new">bliver ved med at spørge og kommer sig selv</td></tr>
+      <tr><td>Samtidige forbindelser</td><td class="old">4 delte; styringsporten svarer ikke, når 2 webforbindelser står åbne</td><td class="new">8 faste; ledige forbindelser lukkes automatisk (belastningstest 541/541)</td></tr>
+      <tr><td>Websiden</td><td class="old">én pakke pr. byte (~3.600 pr. visning)</td><td class="new">2–3 pakker</td></tr>
+      <tr><td>IP-adressekonflikt</td><td class="old">opdages ikke</td><td class="new">opdages (RFC 5227)</td></tr>
+      <tr><td>Hændelseslog</td><td class="old">ingen</td><td class="new">96 hændelser, overlever strømafbrydelse</td></tr>
+      <tr><td>Forsyningsspænding</td><td class="old">ukendt</td><td class="new">måles løbende og logges ved hver chipfejl</td></tr>
+      <tr><td>Netværksstandarder (56 krav)</td><td class="old">26 opfyldt</td><td class="new"><strong>48 opfyldt</strong></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-why33">
+  <h2 id="h-why33">Hvorfor ikke v3.1 eller v3.2?</h2>
+  <p>De var mellemtrin. v3.1 er død ved fire af chipfejlene, heriblandt den, der ligner symptomet fra felten. v3.2 kommer sig efter dem, men er død, når PHY'en holdes i reset, og dens tjek af modtageren holder op med at teste noget, så snart gatewayen har svaret én gang. v3.3 lukker begge huller og er testet mod alle tre på den samme boks. Detaljer: <a href="comparison-da.html">alle versioner sammenlignet</a>.</p>
+</section>
+
+<section aria-labelledby="h-know">
+  <h2 id="h-know">Det skal du vide</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Uændret for kunden og installatøren</h3>
+      <ul>
+        <li>Samme udgange, sekvenstiming, indgange og LED.</li>
+        <li>Samme TCP-styringsprotokol: Companion, eXcontrol, Crestron og Q-SYS virker som før.</li>
+        <li>Samme webadresser og gemte indstillinger. Når hver boks flashes med sin egen tildelte MAC-adresse, ændres adressen ikke, så DHCP-reservationer og firewallregler virker som før.</li>
+        <li>v2.2 kan flashes tilbage uden at miste indstillingerne.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Forbehold</h3>
+      <ul>
+        <li>Bænkresultater fra én rigtig boks, ikke bevis fra felten. Udløseren i felten (dyk i forsyningen) er stadig en hypotese.</li>
+        <li>To gange i 40 chip-reset-forsøg kom netværkschippen tilbage "døv" efter at være sat op igen, i 38 s og ca. 3,5 min, og kom sig selv. v3.3's tjek ville først have grebet ind efter ca. 6 min; hurtigere opdagelse er næste firmwaretrin.</li>
+        <li>En netværkschip, der helt holder op med at svare, kan ingen firmware nulstille på det nuværende kort, fordi chippens reset-ben ikke er forbundet. Det kræver en hardwareændring.</li>
+        <li>Programhukommelsen er 99,5 % fuld: nye funktioner kræver, at noget andet tages ud.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-next">
+  <h2 id="h-next">Næste skridt</h2>
+  <div class="box next">
+    <ol>
+      <li><strong>Test af dyk i forsyningen og langsom opstart</strong> på bænken (kræver tid ved bænken: USB-kablet skal ud).</li>
+      <li><strong>Flash v3.3</strong> med hver boks' egen MAC-adresse på pilotenhederne.</li>
+      <li><strong>Pilot hos kunder, der har haft udfald.</strong> v3.3 logger forsyningsspændingen ved hver chipfejl, så piloten kan be- eller afkræfte forsyningshypotesen.</li>
+      <li><strong>Næste hardwarerevision:</strong> brown-out-grænse på 4,3 V, en reset-kreds og et reset-ben til netværkschippen.</li>
+    </ol>
+  </div>
+</section>
+
+<section aria-labelledby="h-docs">
+  <h2 id="h-docs">Læs mere</h2>
+  <div class="docs">
+    <a href="comparison-da.html">Alle versioner sammenlignet (dansk)</a>
+    <a href="why-v3-3.html" lang="en">Why v3.3 should be official (engelsk)</a>
+    <a href="executive-summary.html" lang="en">Executive summary (engelsk)</a>
+    <a href="report.html" lang="en">Full investigation report (engelsk)</a>
+  </div>
+</section>
+</div>

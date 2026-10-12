@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPS-firmware sammenlignet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Danish edition of comparison.html (same data, same structure): features, fault matrix, recovery scenarios, standards, regression, limits. Links to the English pages where no Danish page exists. */
+:root {
+  --page: #f4f6f6; --surface: #fcfcfb; --ink: #0f1a1d; --ink-2: #4b585c; --muted: #7c8689; --rule: #dde2e3;
+  --accent: #1d6b73; --accent-soft: #e3f0f1;
+  --v22: #eb6834; --v31: #2a78d6; --v32: #0ca30c; --v33: #7d4fd0;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b; --neutral: #a9b3b6;
+  --good-bg: #e2f4e2; --warn-bg: #fdf1d6; --crit-bg: #f8e1e1; --na-bg: #eef1f1;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --v33: #a07ae8; --neutral: #6b7477; --good-bg: #17301a; --warn-bg: #3a2f12; --crit-bg: #3a1a1a; --na-bg: #222a2c; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --v33: #a07ae8; --neutral: #6b7477; --good-bg: #17301a; --warn-bg: #3a2f12; --crit-bg: #3a1a1a; --na-bg: #222a2c; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--font-body); margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 38px; }
+section { display: grid; gap: 14px; min-width: 0; }
+h1 { font: 600 2.3rem/1.1 var(--font-head); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.45rem/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.3 var(--font-head); margin: 0; }
+p { margin: 0; max-width: 74ch; }
+.eyebrow { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.lang { font: 13px/1.5 var(--font-mono); }
+.lede { font-size: 1.12rem; line-height: 1.55; color: var(--ink-2); max-width: 72ch; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .9em; }
+header { display: grid; gap: 12px; }
+.why { font: 12.5px/1.4 var(--font-mono); }
+.verdict { background: var(--accent-soft); border: 1px solid var(--rule); border-left: 4px solid var(--v33); padding: 18px 22px; display: grid; gap: 10px; }
+.verdict p { max-width: 84ch; }
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; min-width: 820px; font-size: 13.5px; }
+table.wrapt { table-layout: fixed; min-width: 640px; }
+table.wrapt .fc { white-space: normal; }
+th, td { text-align: left; vertical-align: top; padding: 8px 11px; border-bottom: 1px solid var(--rule); }
+th { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--page); }
+th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td strong { font-weight: 600; }
+td.v33 { background: color-mix(in srgb, var(--v33) 6%, transparent); }
+.fc { display: inline-block; padding: 2px 7px; border-radius: 4px; font: 12px/1.4 var(--font-mono); white-space: nowrap; }
+.fc.ok { background: var(--good-bg); } .fc.tail { background: var(--good-bg); }
+.fc.latent, .fc.mixed { background: var(--warn-bg); } .fc.dead { background: var(--crit-bg); } .fc.na { background: var(--na-bg); color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.legend .fc { white-space: normal; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; font-size: 14px; }
+.docs { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } h1 { font-size: 1.85rem; } }
+</style>
+<style>body{margin:0}nav a{color:var(--accent)}</style>
+</head>
+<body>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="hvorfor-v3-3.html">Hvorfor v3.3 (kort)</a><a href="comparison-da.html">Alle versioner sammenlignet</a><a href="index.html">Alle dokumenter (engelsk)</a></nav>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Expromo EPS power sequencer · v2.2 · v3.1 · v3.2 · v3.3</div>
+  <h1>EPS-firmware: alle versioner sammenlignet</h1>
+  <p class="lede">Fire firmwareversioner, én tabel pr. emne: hvad de kan, hvordan de håndterer 17 forskellige fejl i netværkschippen, hvordan de kommer sig, når linket, gatewayen eller modtageren svigter, hvor mange krav fra netværksstandarderne de opfylder, og hvordan de opfører sig i daglig drift. Alt er målt på den samme rigtige EPS-boks med de samme forhåndsregistrerede værktøjer; hvor en version ikke er testet, står det i tabellen.</p>
+  <p class="meta">Status 12. okt. 2026 · enhed 3 (rigtig EPS-boks), direkte kabel til en pc · v2.2 feltfirmware, v3.1 (10. okt.), v3.2 (11. okt.), v3.3 (natten til 12. okt.) · alle forsøg rapporteret</p>
+  <p class="lang" lang="en">English version: <a href="comparison.html">EPS firmware: every version compared</a></p>
+</header>
+
+<section aria-labelledby="h-verdict">
+  <h2 id="h-verdict">Kort fortalt</h2>
+  <div class="verdict"><p><strong>v3.3 er den mest robuste af de fire på alle de målinger, vi har, og det er den, vi anbefaler som officiel.</strong> v2.2 skal slukkes og tændes efter de fleste netværksfejl. v3.1 kommer sig efter mange, men dør på fire chipfejl, heriblandt den, der matcher symptomet fra felten. v3.2 kommer sig efter dem, men er død, når PHY'en (chippens fysiske netværksdel) holdes i reset, og dens tjek af modtageren holder op med at teste noget, så snart gatewayen har svaret én gang. v3.3 kommer sig efter alle 17 fejl, tester reelt sin modtager hvert minut og registrerer forsyningsspændingen ved hver chipfejl. Ingen af dem er bevist i felten endnu, og den mest sandsynlige udløser i felten (et dyk i strømforsyningen) mangler stadig at blive testet manuelt.</p></div>
+</section>
+
+<section aria-labelledby="h-features">
+  <h2 id="h-features">Hvad hver version gør</h2>
+  <p>Ben, udgange, sekvenstiming, indgange, LED'en, TCP-styringsprotokollen og de gemte indstillinger er de samme i alle fire; kun netværksdelen er forskellig. v3.1 → v3.2 → v3.3 er små skridt på den samme omskrevne driver.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Område</th><th><i class="k" style="background:var(--v22)"></i>v2.2 (felt)</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>Netværksdriver</td><td>Arduino Ethernet 2.0.2</td><td>egen W5500-driver</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>Forbindelser</td><td>4 sockets delt af alt, én optaget af keepalive; ledige eller halvåbne forbindelser lukkes aldrig</td><td>8 sockets, faste pr. tjeneste; ledige webforbindelser lukkes efter 5 s, ældste styringsforbindelse smides ud</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>Websidens output</td><td>ét TCP-segment pr. byte (~3.600 pr. visning)</td><td>bufferet, 2–3 segmenter</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>DHCP</td><td>bibliotek: blokerer op til 60 s, strander på sin reserveadresse</td><td>RFC 2131, blokerer aldrig, bliver ved med at spørge</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>Detektering af adressekonflikt</td><td>ingen</td><td>RFC 5227</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>TCP-opgivelsestid</td><td>18,4 s (biblioteket skriver W5100'ens registeradresser)</td><td>102 s (RFC 1122)</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>Selvtjek af chippen hvert 5. s</td><td>intet</td><td>version, IP, MAC, maske, gateway</td><td>+ mode, genforsøg, PHY-konfigurationsbits</td><td class="v33">+ <strong>PHY-reset-bit</strong></td></tr>
+      <tr><td>PHY stopper med linket nede</td><td>genoprettes aldrig</td><td>genoprettes aldrig</td><td>kun hvis en konfigurationsbit er ændret</td><td class="v33"><strong>PHY-reset efter 30 s</strong>, med stigende interval op til ~32 min</td></tr>
+      <tr><td>Modtageren bliver døv (link oppe, hører intet)</td><td>opdages aldrig</td><td>gateway-probe, kun hvis gatewayen har svaret siden sidste link-up</td><td>samme</td><td class="v33"><strong>gateway eller seneste klient; overlever et link-up; tæller kun, når der slet intet høres</strong></td></tr>
+      <tr><td>ARP-forespørgsler til en gateway, der er væk</td><td>9 hvert 30. s</td><td>20 på 4 s, hvert minut</td><td>samme</td><td class="v33"><strong>1 pr. minut</strong> (RFC 1122)</td></tr>
+      <tr><td>For lang webforespørgsel</td><td>intet svar</td><td>400</td><td>400</td><td class="v33"><strong>414</strong> (RFC 9112)</td></tr>
+      <tr><td>Hændelseslog (overlever strømafbrydelse)</td><td>ingen</td><td>96 hændelser</td><td>samme</td><td class="v33">+ forsyningsspænding ved hver geninitialisering af chippen</td></tr>
+      <tr><td>Udlæsning af forsyning og brown-out</td><td>ingen</td><td>ingen</td><td>ingen</td><td class="v33"><strong><code>VCC</code>, <code>VCC_MIN</code>, <code>BOD</code></strong> i <code>NET_STATUS</code></td></tr>
+      <tr><td>Syslog</td><td>ingen</td><td>RFC 5424, valgfri</td><td>samme</td><td class="v33">samme</td></tr>
+      <tr><td>Flash brugt (af 32.256 B) / RAM-globaler (af 2.048 B)</td><td class="num">29.876 / 736</td><td class="num">31.120 / 1.364</td><td class="num">31.238 / 1.364</td><td class="num v33">32.094 / 1.407</td></tr>
+    </tbody>
+  </table></div>
+  <p class="why">Hvorfor hver ændring blev lavet (engelsk): <a href="why-v3-3.html">why v3.3</a> · <a href="why-v3-2.html">why v3.2</a> · <a href="findings.html#h-mech">mekanismer (findings)</a> · <a href="report.html">fuld rapport</a> · kort på dansk: <a href="hvorfor-v3-3.html">hvorfor v3.3</a></p>
+</section>
+
+<section aria-labelledby="h-faults">
+  <h2 id="h-faults">Fejlmatrix: ét forkert chipregister ad gangen</h2>
+  <p>Hver fejl skrives ind i den rigtige boks' egen W5500 af firmwaren (kun testbuilds); pc'en sender kun ping, en styringskommando og en webforespørgsel og overvåger alle tjenester i 120 s. Tre forsøg pr. fejl og firmware, forhåndsregistrerede kriterier. F1–F14 for v2.2/v3.1/v3.2 blev kørt 11. okt.; F15–F17 og hele v3.3 natten til 12. okt.</p>
+  <div class="legend">
+    <span class="fc ok">kom sig selv / ingen effekt</span>
+    <span class="fc tail">"ok*": kom sig; ét enkelt ping tabt i de sidste 30 s (≈0,4 % pr. ping, testartefakt)</span>
+    <span class="fc latent">"latent": kører videre med den forkerte indstilling</span>
+    <span class="fc dead">død, indtil den slukkes og tændes</span>
+  </div>
+  <div class="tw"><table class="fmt"><thead><tr><th>Fejl (ét W5500-register)</th><th>v2.2</th><th>v3.1</th><th>v3.2</th><th>v3.3</th></tr></thead><tbody>
+<tr><td><strong>F1</strong> Chip-softreset (alle indstillinger tabt)</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (6–10 s)</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (6–10 s)</span></td><td><span class="fc ok">genoprettet (4–10 s) 3/3</span></td></tr>
+<tr><td><strong>F2</strong> IP-adresse ændret</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (10 s)</span></td><td><span class="fc ok">genoprettet (5–10 s) 3/3</span></td><td><span class="fc ok">genoprettet (3–5 s) 3/3</span></td></tr>
+<tr><td><strong>F3</strong> MAC-adresse ændret</td><td><span class="fc latent">latent 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (5–10 s)</span></td><td><span class="fc ok">genoprettet (6–10 s) 3/3</span></td><td><span class="fc ok">genoprettet (4–6 s) 3/3</span></td></tr>
+<tr><td><strong>F4</strong> Gateway ændret</td><td><span class="fc mixed">ok* 2/3, latent 1/3</span></td><td><span class="fc ok">genoprettet (6 s) 3/3</span></td><td><span class="fc ok">genoprettet (3–7 s) 3/3</span></td><td><span class="fc ok">genoprettet (6–7 s) 3/3</span></td></tr>
+<tr><td><strong>F5</strong> Netmaske ændret</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc ok">genoprettet (4–7 s) 3/3</span></td><td><span class="fc tail">ok 1/3, ok* 2/3 (5 s)</span></td><td><span class="fc ok">genoprettet (3–7 s) 3/3</span></td></tr>
+<tr><td><strong>F6</strong> Ping blokeret (mode-registret)</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (4–7 s)</span></td><td><span class="fc ok">genoprettet (3–7 s) 3/3</span></td></tr>
+<tr><td><strong>F7</strong> PHY slukket (matcher felt-symptomet)</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (11–12 s)</span></td><td><span class="fc ok">genoprettet (4–6 s) 3/3</span></td></tr>
+<tr><td><strong>F8</strong> PHY tvunget til 10 Mbps halv duplex</td><td><span class="fc latent">latent 3/3</span></td><td><span class="fc latent">latent 3/3</span></td><td><span class="fc ok">genoprettet (4–10 s) 3/3</span></td><td><span class="fc ok">genoprettet (6–10 s) 3/3</span></td></tr>
+<tr><td><strong>F9</strong> Antal genforsøg 0</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td><span class="fc ok">genoprettet (3–5 s) 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (10 s)</span></td></tr>
+<tr><td><strong>F10</strong> Styringsportens lyttere lukket</td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc tail">ok 1/3, ok* 2/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td></tr>
+<tr><td><strong>F11</strong> Styringsportens portnummer ændret</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td></tr>
+<tr><td><strong>F12</strong> Webportens lyttere lukket</td><td><span class="fc tail">ok 2/3, ok* 1/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3</span></td></tr>
+<tr><td><strong>F13</strong> Webportens portnummer ændret</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3</span></td></tr>
+<tr><td><strong>F14</strong> Styringsportens modtagebuffer 0</td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td><td><span class="fc ok">ingen effekt 3/3</span></td></tr>
+<tr><td><strong>F15</strong> PHY holdt i reset (ny)</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td><span class="fc ok">genoprettet (3–6 s) 3/3</span></td></tr>
+<tr><td><strong>F17</strong> PHY slukket, skrevet én gang (ny)</td><td><span class="fc mixed">ok* 1/3, latent 2/3</span></td><td><span class="fc mixed">ok* 2/3, latent 1/3</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (5–26 s)</span></td><td><span class="fc tail">ok 2/3, ok* 1/3 (6–7 s)</span></td></tr>
+<tr><td><strong>F16</strong> F15 med kun link-nede-genopretningen (v3.3-build uden tjek af bit 7)</td><td><span class="fc na">—</span></td><td><span class="fc na">—</span></td><td><span class="fc na">—</span></td><td><span class="fc ok">genoprettet (40 s) 3/3</span></td></tr>
+</tbody></table></div>
+
+  <p class="meta">Genoprettelsestider er fra fejlen blev sat ind, til alle tre tjenester svarer igen. "ok*" er slut-pingtjekket, der fanger ét enkelt løst tab, efter at tjenesten allerede var tilbage; det rammer også fejl, der ikke kan påvirke ping. Baggrundstab af ping i forsøg, der kom sig: v3.1 1,97 % (0,43 % uden ét MAC-forsøg, hvor linket flappede i ~60 s), v3.2 1,09 %, v3.3 0,52 %.</p>
+</section>
+
+<section aria-labelledby="h-recovery">
+  <h2 id="h-recovery">Genopretningsscenarier</h2>
+  <div class="tw"><table class="wrapt"><colgroup><col style="width:22%"><col><col><col><col></colgroup>
+    <thead><tr><th>Scenarie</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>Netværkschippen mister alle sine indstillinger (chip-reset via kommando)</td><td><span class="fc dead">død indtil sluk/tænd (4/4)</span></td><td><span class="fc ok">kom sig på 2–7 s, udgange bevaret (30/30)</span></td><td><span class="fc ok">kom sig (fejlmatrix F1, 3/3)</span></td><td class="v33"><span class="fc mixed">kom sig på 2–8 s (38/40); to gange kom chippen tilbage døv i 38 s / ~3,5 min og kom sig selv</span></td></tr>
+      <tr><td>DHCP-server væk under en fornyelse</td><td><span class="fc dead">strandet indtil sluk/tænd</span></td><td><span class="fc ok">bliver ved med at spørge, kommer sig selv</span></td><td><span class="fc ok">som v3.1</span></td><td class="v33"><span class="fc ok">DHCP-sekvens A–E bestået</span></td></tr>
+      <tr><td><strong>PHY holdt i reset</strong> (link nede, ny fejl F15)</td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td><span class="fc dead">død 3/3</span></td><td class="v33"><span class="fc ok">kom sig på 3–6 s (3/3)</span></td></tr>
+      <tr><td>PHY hænger med linket nede, registrene ser rigtige ud (F16)</td><td><span class="fc dead">ingen genopretning (koden)</span></td><td><span class="fc dead">ingen genopretning (koden)</span></td><td><span class="fc dead">ingen genopretning (koden)</span></td><td class="v33"><span class="fc ok">PHY-reset efter 30 s: tilbage efter 40 s (3/3)</span></td></tr>
+      <tr><td>Gatewayen forsvinder (router-genstart), overvåget i 12 min</td><td><span class="fc latent">keepalive bruger den cachede adresse: ingen ARP, efter den forsvandt (ingen genopretningslogik at udløse)</span></td><td><span class="fc latent">som v3.2: 1 ARP, mens den var der, ingen bagefter; tjekket bliver ved med at "lykkes"</span></td><td><span class="fc latent">ingen ARP, efter den forsvandt: tjekket bliver ved med at "lykkes" på en cachet adresse</span></td><td class="v33"><span class="fc ok">1 ARP-forespørgsel pr. tjek; ingen falsk PHY-reset</span></td></tr>
+      <tr><td>Modtageren bliver døv med linket oppe</td><td><span class="fc dead">opdages aldrig</span></td><td><span class="fc dead">kan ikke opdages, når gatewayen har svaret (cachet adresse), og heller ikke uden gateway</span></td><td><span class="fc dead">som v3.1</span></td><td class="v33"><span class="fc ok">3 tavse tjek → PHY-reset (emuleret: én gang, efter 6 min); to rigtige episoder efter geninitialiseringer forsvandt af sig selv inden (38 s, ~3,5 min)</span></td></tr>
+      <tr><td>Link nede i 180 s (kabel eller switch)</td><td><span class="fc ok">tilbage, når linket kommer igen (switchport-flaps, 9. okt.)</span></td><td><span class="fc ok">tilbage, når linket kommer igen (16/16 linkfald, 11. okt.)</span></td><td><span class="fc na">ikke kørt</span></td><td class="v33"><span class="fc ok">tilbage 8,3–8,6 s efter linket kom igen (2/2); 2 harmløse PHY-resets pr. udfald</span></td></tr>
+      <tr><td>Hovedløkken hænger</td><td><span class="fc ok">watchdog-genstart (udgange slukket)</span></td><td><span class="fc ok">watchdog-genstart ~25 s (3/3)</span></td><td><span class="fc ok">som v3.1</span></td><td class="v33"><span class="fc ok">watchdog-genstart 25 s (3/3 uden for udfaldet kl. 03:48)</span></td></tr>
+      <tr><td>Opstart efter USB-reset (nulstiller også netværkschippen)</td><td><span class="fc ok">200/200</span></td><td><span class="fc ok">200/200</span></td><td><span class="fc na">ikke kørt</span></td><td class="v33"><span class="fc ok">50/50, median 9,2 s</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="why">Detaljer (engelsk): <a href="findings.html#h-dhcp">DHCP-strandingen</a> · <a href="findings.html#h-v33">kodeanalyse og v3.3</a> · <a href="report.html">fuld rapport §5.20–5.26</a></p>
+</section>
+
+<section aria-labelledby="h-standards">
+  <h2 id="h-standards">Netværksstandarder (56 forhåndsregistrerede krav, 10 standarder)</h2>
+  <p>Beståkriterierne blev skrevet ned, før nogen firmware blev kørt; samme værktøj, samme boks. En standard er kun bestået, hvis alle dens krav er bestået. v3.2 blev ikke kørt gennem testsuiten: dens eneste ændring i forhold til v3.1 er selvtjekket, som intet i suiten måler, så dens kolonne gentager v3.1's.</p>
+  <div class="tw"><table class="wrapt"><colgroup><col style="width:22%"><col><col><col><col></colgroup>
+    <thead><tr><th>Standard</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>IEEE 802.3 Ethernet</td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået (som v3.1)</span></td><td class="v33"><span class="fc ok">bestået</span></td></tr>
+      <tr><td>IEEE 802 MAC-adressering</td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået (som v3.1)</span></td><td class="v33"><span class="fc ok">bestået</span></td></tr>
+      <tr><td>RFC 826 ARP</td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået (som v3.1)</span></td><td class="v33"><span class="fc ok">bestået</span></td></tr>
+      <tr><td>IEEE 802.1D/Q-endestation</td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået (som v3.1)</span></td><td class="v33"><span class="fc ok">bestået</span></td></tr>
+      <tr><td>RFC 5227 detektering af adressekonflikt</td><td><span class="fc dead">ikke bestået: 6 krav</span></td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået (som v3.1)</span></td><td class="v33"><span class="fc ok">bestået (2 kan ikke verificeres uden forfalsket trafik)</span></td></tr>
+      <tr><td>RFC 5424/5426 syslog</td><td><span class="fc na">findes ikke</span></td><td><span class="fc ok">bestået</span></td><td><span class="fc ok">bestået (som v3.1)</span></td><td class="v33"><span class="fc ok">bestået</span></td></tr>
+      <tr><td>RFC 2131/2132 DHCP-klient</td><td><span class="fc dead">ikke bestået: 7 krav</span></td><td><span class="fc latent">ikke bestået: 1 krav</span></td><td><span class="fc latent">ikke bestået: 1 krav (som v3.1)</span></td><td class="v33"><span class="fc latent">ikke bestået: 1 krav (bevidst: spørger fra sin reserveadresse)</span></td></tr>
+      <tr><td>HTTP (RFC 9110/9112)</td><td><span class="fc dead">ikke bestået: 7 krav</span></td><td><span class="fc latent">ikke bestået: 3 krav</span></td><td><span class="fc latent">ikke bestået: 3 krav (som v3.1)</span></td><td class="v33"><span class="fc latent">ikke bestået: 2 krav (bevidst: tænd/sluk via GET, intet Host-tjek)</span></td></tr>
+      <tr><td>TCP (RFC 9293/1122)</td><td><span class="fc dead">ikke bestået: 2 krav</span></td><td><span class="fc latent">ikke bestået: 1 krav</span></td><td><span class="fc latent">ikke bestået: 1 krav (som v3.1)</span></td><td class="v33"><span class="fc latent">ikke bestået: 1 krav (bevidst: 2 s sendetimeout)</span></td></tr>
+      <tr><td>RFC 1122 værtskrav</td><td><span class="fc dead">ikke bestået: 3 krav</span></td><td><span class="fc latent">ikke bestået: 3 krav</span></td><td><span class="fc latent">ikke bestået: 3 krav (som v3.1)</span></td><td class="v33"><span class="fc latent">ikke bestået: 2 krav, begge chipbegrænsninger (ARP-raten rettet)</span></td></tr>
+      <tr><td><strong>Beståede krav, af 56</strong></td><td><strong>26</strong></td><td><strong>46</strong></td><td><strong>46</strong></td><td class="v33"><strong>48</strong></td></tr>
+    </tbody>
+  </table></div>
+  <p class="why">Pr. krav (engelsk): <a href="findings.html#h-std">findings</a> · <a href="executive-summary.html#h-standards">executive summary</a></p>
+</section>
+
+<section aria-labelledby="h-regression">
+  <h2 id="h-regression">Daglig drift (regression)</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Test</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>Strøm og udgangssekvens (21 tjek)</td><td>referenceadfærd</td><td>21/21</td><td>som v3.1</td><td class="v33">21/21</td></tr>
+      <tr><td>Belastningstest, kort (ledige forbindelser, derefter Companion + eXcontrol + browser)</td><td>styringsporten død med 2 ledige webforbindelser (1 af 30 besvaret)</td><td>541/541</td><td>som v3.1</td><td class="v33">541/541</td></tr>
+      <tr><td>Ledige forbindelser holdt åbne, op til 5 pr. port</td><td>styringsporten død fra 2</td><td>800/800 besvaret</td><td>som v3.1</td><td class="v33">alle besvaret</td></tr>
+      <tr><td>Vedvarende forbindelser fra styresystemer</td><td>understøttes ikke</td><td>6/6</td><td>som v3.1</td><td class="v33">6/6</td></tr>
+      <tr><td>Skrald og forkert formateret input</td><td>—</td><td>16/16</td><td>som v3.1</td><td class="v33">16/16</td></tr>
+      <tr><td>HTTP-metoder og forkert formaterede forespørgsler</td><td>alle metoder behandles som GET</td><td>21/21</td><td>som v3.1</td><td class="v33">21/21 plus 414</td></tr>
+      <tr><td>DHCP-sekvens (ingen server, lease, server væk, adresse i brug)</td><td>strander efter et udfald, genstarter ved fornyelser</td><td>bestået</td><td>som v3.1</td><td class="v33">bestået</td></tr>
+      <tr><td>10 Mbps halv duplex</td><td>—</td><td>bestået (belastning 543/544)</td><td>som v3.1</td><td class="v33">bestået (belastning 543/543)</td></tr>
+      <tr><td>millis()-overløb efter 49,7 dage (simuleret)</td><td>—</td><td>bestået</td><td>som v3.1</td><td class="v33">bestået</td></tr>
+      <tr><td>Laveste frie stak set</td><td>~0,45 KB (beregnet)</td><td>243 B</td><td>som v3.1</td><td class="v33">190 B</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">v3.2 deler v3.1's netværksdel bortset fra selvtjekket, så dens daglige drift blev ikke målt separat; "som v3.1" markerer det.</p>
+</section>
+
+<section aria-labelledby="h-limits">
+  <h2 id="h-limits">Hvad tabellerne ikke viser</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Målt</h3>
+      <ul>
+        <li>Alle fire firmwareversioner på den samme rigtige boks (10 V forsyning, seks SSR'er, ingen belastning), samme testværktøj, tre forsøg pr. fejl.</li>
+        <li>v3.3 natten til 12. okt.: 51 fejlmatrix-forsøg, 50 opstarter efter USB-reset, hele regressionssuiten samt test af link nede, forsvundet gateway og døv modtager.</li>
+        <li>Boksens brown-out-niveau (2,7 V) og forsyning (≈ 5,1 V på USB), læst af v3.3 selv.</li>
+        <li>To gange i 40 chip-reset-forsøg på v3.3 kom netværkschippen tilbage døv efter sin geninitialisering (38 s og ~3,5 min) og kom sig derefter af sig selv; én episode er optaget (chippen sender, men svarer ikke på noget). v3.1: 0 af 30.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Ikke testet endnu</h3>
+      <ul>
+        <li><strong>Dyk i forsyningen og langsom opstart.</strong> Den førende hypotese for udfaldene i felten (boksen rapporterer et brown-out-niveau på 2,7 V). Strømmen kan kun afbrydes rigtigt, når USB-kablet er taget ud, så testen kræver tid ved bænken.</li>
+        <li><strong>Rigtige belastninger</strong> koblet af SSR'erne, drift over flere døgn og andre switchmærker.</li>
+        <li><strong>v3.3's indgreb ved en rigtig døv modtager.</strong> De to rigtige episoder på denne boks forsvandt af sig selv, før tjekket greb ind; selve tjekket er testet ved emulering.</li>
+        <li><strong>En W5500, der holder op med at svare på SPI.</strong> Ingen firmware på dette kort kan nulstille den (reset-benet er ikke forbundet); det kræver en hardwareændring.</li>
+        <li>Fejlrater i felten: én boks, tre forsøg pr. fejl. Tabellerne viser adfærd, ikke fejlrater.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-docs">
+  <h2 id="h-docs">Resten af undersøgelsen</h2>
+  <div class="docs">
+    <a href="hvorfor-v3-3.html">Hvorfor v3.3 (kort, dansk)</a>
+    <a href="comparison.html" lang="en">All versions compared (English)</a>
+    <a href="why-v3-3.html" lang="en">Why v3.3 should be official (engelsk)</a>
+    <a href="executive-summary.html" lang="en">Executive summary (engelsk)</a>
+    <a href="findings.html" lang="en">Findings at a glance (engelsk)</a>
+    <a href="report.html" lang="en">Full investigation report (engelsk)</a>
+  </div>
+</section>
+</div>
+
+</body>
+</html>
