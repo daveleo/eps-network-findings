@@ -45,11 +45,11 @@ a { color: var(--accent); }
 <style>body{margin:0}nav a{color:var(--accent)}</style>
 </head>
 <body>
-<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="why-v3-2.html">Why v3.2</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="why-v3-3.html">Why v3.3</a><a href="comparison.html">All versions compared</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
 <div class="wrap">
 <h1>EPS network failures: investigation report</h1>
-<p><strong>Expromo EPS power sequencer (Keyestudio KS0304: ATmega328P + WIZnet W5500), firmware v2.2 vs v3.0 and v3.1</strong>
-Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code> · Status as of 2026-10-11 · <strong>v3.2 is recommended as the official firmware</strong> (v3.1 + a wider W5500 self-check; see §5.24)</p>
+<p><strong>Expromo EPS power sequencer (Keyestudio KS0304: ATmega328P + WIZnet W5500), firmware v2.2 vs v3.0, v3.1, v3.2 and v3.3</strong>
+Bench work 2026-10-08 13:00 – 2026-10-12 morning · Repo <code>daveleo/EPS</code> · Status as of 2026-10-12 · <strong>v3.3 is recommended as the official firmware</strong> (v3.2 + the gaps a code analysis found; see §5.25–5.26)</p>
 <hr />
 <h2>1. Summary</h2>
 <p>Units in the field drop off the network at random: no ping, no web page, no TCP control, until power is cycled. No failed unit has been examined in its failed state. Field units are usually set to a static IP; some AV networks have a DHCP server, sometimes not.</p>
@@ -64,8 +64,9 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 </li>
 <li><strong>Static-mode field failures are not explained yet.</strong> IP address conflicts are excluded (field knowledge). Remaining candidates: (b) triggered by load switching, and (c).</li>
 <li><strong>v2.2 also has network defects of its own</strong> that cause partial failures (two idle connections block the control port while ping works; the web page blocks control for ~0.9 s; the stall watchdog can't see either). Part of this is the <strong>Arduino Ethernet library</strong> itself, which also <strong>writes its retry settings to W5100 register addresses on the W5500</strong> (RTR = 72 ms, RCR = 8 instead of 200 ms × 2; §5.19).</li>
-<li><strong>v3.0</strong>, a rewrite of the network layer, beats v2.2 on every pre-registered criterion except one lost ping, recovers from (a) and (b), and kept its lease through every DHCP event. <strong>v3.1</strong> (v3.0 + network-standards work: DHCP timing and DECLINE, address conflict detection, TCP timers, HTTP methods, syslog) re-ran every non-soak test on its final build on the real box and passed (§5.22). <strong>v3.2</strong> (v3.1 + a wider W5500 self-check covering the mode, retry and PHY registers) recovers from all 14 single-register chip faults — including the PHY power-down that reproduces the field symptom, which v2.2 and v3.1 both die on — with no regression (§5.24); <strong>it is recommended as the official firmware</strong>. <strong>None is field-proven</strong>, and none has run on a box with real loads.</li>
+<li><strong>v3.0</strong>, a rewrite of the network layer, beats v2.2 on every pre-registered criterion except one lost ping, recovers from (a) and (b), and kept its lease through every DHCP event. <strong>v3.1</strong> (v3.0 + network-standards work: DHCP timing and DECLINE, address conflict detection, TCP timers, HTTP methods, syslog) re-ran every non-soak test on its final build on the real box and passed (§5.22). <strong>v3.2</strong> (v3.1 + a wider W5500 self-check covering the mode, retry and PHY registers) recovers from all 14 single-register chip faults — including the PHY power-down that reproduces the field symptom, which v2.2 and v3.1 both die on — with no regression (§5.24). <strong>v3.3</strong> (v3.2 + the four gaps the code analysis of §5.25 found: the PHY reset bit, a link that stays down, a receiver check that works without a gateway and after a link-up, and a supply monitor) recovers from all 17 single-register faults including a PHY held in reset, on which v3.2 is dead, and passed the full regression overnight (§5.26); <strong>it is recommended as the official firmware</strong>. <strong>None is field-proven</strong>, and none has run on a box with real loads.</li>
 <li><strong>Corrections made on 2026-10-09</strong> (§5.17–5.19): a USB/DTR reset also resets the W5500 (its link renegotiates), so the deaf start-ups followed a W5500 hardware reset, not a CPU-only restart; the H4c rationale ("v2.2 never resets the PHY") is void; v2.2's own watchdog restarts never produced a deaf state (0 in 19+). Finding #7 (retransmission "3 tries, ~1.4 s") was wrong because of the library defect.</li>
+<li><strong>Code analysis (§5.25):</strong> v2.2 cannot make a static unit stop answering by its own logic; the field failure needs an outside upset of the W5500, which v2.2 can never leave. The leading trigger hypothesis is a supply sag: the board's brown-out level is <strong>2.7 V (measured on unit 3)</strong>, below what the CPU (3.78 V at 16 MHz) and the W5500 (2.97 V) need. Untested: it needs USB unplugged.</li>
 <li><strong>Standards (§5.23):</strong> on a pre-registered suite of 56 requirements from 10 standards, run on the same box, <strong>v3.1 passes 46 and v2.2 26</strong>. By standard, v3.1 passes 6 (IEEE 802.3, IEEE 802 MAC, ARP, RFC 5227, 802.1D, syslog) and v2.2 4 (it has no syslog). Both fail RFC 1122, DHCP, TCP and HTTP, but v3.1 on 8 items and v2.2 on 25. Two of the shared failures are limits of the W5500 chip that no firmware can fix. The suite measures conformance, not the field failure: v3.1's main gain over v2.2 is recovery from (a) and (b), which the suite doesn't test.</li>
 </ol>
 <hr />
@@ -187,6 +188,11 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <td>EEPROM wipe</td>
 <td><code>tools/eeprom_wipe/</code></td>
 <td>all EEPROM to 0xFF, so the firmware starts from defaults (conformance suite)</td>
+</tr>
+<tr>
+<td><strong>v3.3</strong></td>
+<td><code>Expromo_EPS_v3_3/</code>, per unit <code>-DEPS_MAC_SUFFIX=0x058</code></td>
+<td>v3.2 + G1–G5 (§5.26); 32,094 B flash, 1,407 B RAM; test builds <code>v33_poke</code> (<code>TEST_POKE_BUILD</code>, <code>TEST_SLIM</code>), <code>v33_poke_nog1</code> (+<code>NO_PHY_RST_CHECK</code>), <code>v33_fault</code>, <code>v33_rollover</code></td>
 </tr>
 <tr>
 <td>v3.0 test flags</td>
@@ -969,8 +975,26 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 </tbody>
 </table></div>
 <p><strong>What it shows.</strong> v3.1's health check repairs every register it covers — chip version, gateway, mask, MAC, IP — usually in 4–10 s, with no reset and the outputs untouched; v2.2 needs a power cycle for the chip reset, a wrong IP or a wrong mask (9/9 dead) and keeps a wrong MAC or gateway for good. v3.1 also survives every socket fault, including a listener moved to another port, which v2.2 does not. <strong>But four faults fall outside v3.1's check and leave it dead on both firmwares:</strong> the mode register's ping block, the retry count at 0, a forced 10-half link, and — the important one — <strong>PHY power-down, which produces the exact field symptom</strong> (no ping, no web, no TCP until a power cycle). Of the faults tested, PHY power-down (and, on v2.2, the chip reset and wrong IP that v3.1 does repair) is the one that still matches the field failure on v3.1. This says which faults <em>could</em> produce the field symptom, not which one does; the field trigger is still untested (§7).</p>
-<p><strong>v3.2 candidate — the fix, and the same matrix re-run (Measured, 2026-10-11).</strong> The fix suggested by this result is to widen v3.1's 5 s comparison to the registers it currently ignores: the mode register <code>MR</code> (ping block), the retransmission registers <code>RTR</code>/<code>RCR</code> (retry count) and the <code>PHYCFGR</code> configuration bits (PHY power-down and forced link mode). On a mismatch v3.2 takes the same re-init path it already uses for a bad address, which re-applies all of these and renegotiates the link. Built on branch <code>v3.2-health-check</code> (<code>Expromo_EPS_v3_2</code>, production 31,238 B of 32,256; +118 B over v3.1), flashed to unit 3, first confirmed not to false-trigger a reinit-loop (REINIT=0, PHYRESET=0 over 90 s), then run through the same 14-fault matrix (3 trials each). <strong>Result: the four faults v3.1 could not recover — ping block, PHY power-down, forced 10-half and retry count 0 — now recover on v3.2.</strong> Forced 10-half and retry-0 pass 3/3; ping block and PHY power-down recover in 2 of 3 trials, the third failing only the end-of-run stray-ping check (which also fired on faults that cannot affect ping, confirming it as a ~0.4 %/ping artefact, not service loss). The field-matching PHY power-down comes back in 11–12 s with no reset. <strong>No trial on v3.2 produced a &ldquo;dead/needs-reset&rdquo; outcome anywhere in the matrix, no relay moved, and no spurious reinit was seen</strong> — so the wider check recovers the field-matching fault without regressing anything or destabilising steady state, at a cost of +118 B flash and three extra SPI reads per 5 s cycle. On these results v3.2 is recommended as the field candidate in place of v3.1.</p>
+<p><strong>v3.2 candidate — the fix, and the same matrix re-run (Measured, 2026-10-11).</strong> The fix suggested by this result is to widen v3.1's 5 s comparison to the registers it currently ignores: the mode register <code>MR</code> (ping block), the retransmission registers <code>RTR</code>/<code>RCR</code> (retry count) and the <code>PHYCFGR</code> configuration bits (PHY power-down and forced link mode). On a mismatch v3.2 takes the same re-init path it already uses for a bad address, which re-applies all of these and renegotiates the link. Built on branch <code>v3.2-health-check</code> (<code>Expromo_EPS_v3_2</code>, production 31,238 B of 32,256; +118 B over v3.1), flashed to unit 3, first confirmed not to false-trigger a reinit-loop (REINIT=0, PHYRESET=0 over 90 s), then run through the same 14-fault matrix (3 trials each). <strong>Result: the four faults v3.1 could not recover — ping block, PHY power-down, forced 10-half and retry count 0 — now recover on v3.2.</strong> Forced 10-half and retry-0 pass 3/3; ping block and PHY power-down recover in 2 of 3 trials, the third failing only the end-of-run stray-ping check (which also fired on faults that cannot affect ping, confirming it as a ~0.4 %/ping artefact, not service loss). The field-matching F7 PHY power-down comes back in 11–12 s with no reset. <strong>No trial on v3.2 produced a "dead/needs-reset" outcome anywhere in the matrix, no relay moved, and no spurious reinit was seen</strong> — so the wider check recovers the field-matching fault without regressing anything or destabilising steady state, at a cost of +118 B flash and three extra SPI reads per 5 s cycle. On these results v3.2 is recommended as the field candidate in place of v3.1. Full per-trial data: <code>docs/fault-matrix-results.md</code>.</p>
 <p><strong>Reset start-up (Test 2b).</strong> The other planned test asks how often the real box comes up deaf after a fresh start — the deaf start-up seen on unit 2 (§5.12). 200 USB/DTR resets on each firmware (a DTR reset also resets the W5500, §5.17): <strong>v3.1 came up 200 of 200, v2.2 200 of 200, no deaf event on either</strong> (median time to answer 9.1 s for v3.1, 2.9 s for v2.2 — v3.1 is slower because it runs the RFC 5227 probe/announce and negotiates the PHY twice before using its address). This matches every earlier run on units 1 and 3; the deaf start-up has only ever appeared on unit 2 (4 events). The link-drop half (2a) was set aside: the bench method that drives it (disabling the PC's adapter) stopped being reliable, and a unit-side method was deferred.</p>
+<h3>5.25 Code analysis: v2.2 (with the Ethernet library), v3.1, v3.2 (2026-10-12) — Code-read, datasheet</h3>
+<p>All three firmwares and the Arduino Ethernet 2.0.2 source were read in full against the W5500 datasheet v1.1.0 (text extracted from WIZnet's PDF), the RFCs and AVR practice; stack frames were compiled with <code>-fstack-usage</code>. Full text with code references: <code>docs/code-analysis.md</code>.</p>
+<ul>
+<li><strong>No software-only cause for static-IP dropouts.</strong> After a successful start, neither v2.2 nor the library writes any register that decides whether the W5500 answers ARP or ping (<code>SIPR</code>, <code>SHAR</code>, <code>SUBR</code>, <code>MR</code>, <code>PHYCFGR</code>); only <code>Ethernet.begin()</code> in <code>setup()</code> does. A static unit can't silence itself by its own logic.</li>
+<li><strong>Three routes to "dead until power cycle" on v2.2,</strong> none of which it can leave: (D1) the chip loses its settings (§5.9; the library re-creates listeners on 0.0.0.0, the stall watchdog sees healthy sockets, the keepalive reads gateway 0 and skips); (D2) the PHY stops — <strong>v2.2's stall watchdog and keepalive return immediately whenever the link is down</strong>, so a PHY fault switches off v2.2's only recovery (the code-level reason for F7 in §5.24); (D3) the chip isn't detected when the library initialises it — <code>begin()</code> returns silently, every later <code>linkStatus()</code> retries the detection with a 560 ms delay, and if a retry succeeds the chip runs on IP 0.0.0.0 / MAC 0 with the LED blue. The only v2.2 recovery, a CPU watchdog reset, doesn't hardware-reset the W5500 (§5.17).</li>
+<li><strong>Leading trigger hypothesis: the supply.</strong> The Uno fuse sets the brown-out level to <strong>2.7 V</strong> (confirmed on unit 3 by v3.3's fuse read, §5.26); the ATmega needs ≥ 3.78 V at 16 MHz and the W5500 ≥ 2.97 V on its 3.3 V rail. A 5 V-rail sag into ~2.9–4.0 V browns the W5500 out while the CPU runs on (D1/D2); a deeper one restarts the CPU, possibly before the chip is ready (D3). The 22 µF reset capacitor fixed the box's unreliable start from the 10 V PSU, which fits a slow supply ramp, but does nothing for sags in operation. Untested (needs USB unplugged).</li>
+<li><strong>Exposure.</strong> v2.2 sends every byte with its own <code>SEND</code>: ≈ 340 SPI writes and 82 TCP segments per <code>POWER_STATUS</code> vs ≈ 15 and 1–2 on v3.x. All bench polling of v2.2 (~10⁵ requests) only rules out per-request failure rates above ~3 × 10⁻⁵, while a unit polled once a second makes 2.6 × 10⁶ requests a month.</li>
+<li><strong>Other v2.2/library findings:</strong> the real TCP give-up is 18.4 s (library register bug), so a web client that stalls mid-page can make v2.2 hit its watchdog and drop the outputs; the library's chip detection probes W5200 framing first, which on a W5500 selects a reserved block the datasheet says "can cause the mal-function of the W5500".</li>
+<li><strong>v3.2 gaps:</strong> G1 the health check masks out the PHY reset bit (<code>PHYCFGR</code> bit 7; the datasheet says the PHY stays in reset while it is 0); G2 no recovery for a link that stays down; G3 the receiver check needs a gateway that answered since the last link-up, so it never fires on closed networks or for a receiver that goes deaf at link-up; G4 a W5500 that stops answering on SPI needs a hardware reset line the board doesn't have; G5 no supply visibility (Optiboot 4.4 clears the reset-cause flags before the sketch starts).</li>
+</ul>
+<h3>5.26 v3.3: the gaps closed, tested overnight against every version (2026-10-12) — Measured</h3>
+<p>v3.3 = v3.2 + the §5.25 gaps (G1 PHY reset bit in the health check; G2 PHY reset after 30 s without link, backing off; G3 receiver check by one raw ARP request to the gateway or the last client, listening to every frame for 2 s and counting a silent check only if nothing at all was heard, "answered" surviving a link-up; G5 5 V supply via the internal bandgap in <code>NET_STATUS</code> and logged with every re-init; <code>BOD</code> fuse readout; 414 for an over-long target). 32,094 B of 32,256 (162 B free), 1,407 B RAM. Protocol and pass criteria committed before the run (<code>docs/v3.3-tests.md</code>, amendment 1 before any affected data); unattended run on unit 3, direct cable, USB connected, reset capacitor removed. Changes and builds: <code>docs/v3.3.md</code>.</p>
+<p><strong>Fault matrix (51 trials on v3.3).</strong> All 17 faults recovered by themselves (3–10 s) or had no effect; no dead, latent or slow trial; outputs <code>111111</code> throughout; four tail-only trials (stray ping, two on faults that can't affect ping). <strong>F15 (PHY held in reset):</strong> v3.3 3–6 s; <strong>v2.2, v3.1 and v3.2 dead 3/3 each</strong> (power cycle needed), as the code analysis predicted (gap G1). <strong>F16</strong> (F15 with only the link-down recovery): back at 40 s in 3/3. <strong>F17</strong> (PHYCFGR power-down written once): v3.3 recovered 6–7 s; v3.2 recovered 5–26 s; on v3.1 and v2.2 the PHY kept running with the wrong value in the register (latent): a mode written without the RST toggle doesn't take effect until the next PHY reset. The field-matching F7 PHY power-down now recovers in 4–6 s (v3.2: 11–12 s). Background ping loss in recovered trials: v3.3 0.52 %, v3.2 1.09 %, v3.1 1.97 % — the raw-frame listening doesn't add loss.</p>
+<p><strong>Receiver check.</strong> Gateway present then gone (N6): v3.3 sent one ARP request per check (11 in 12 min to the vanished gateway, never more than one per second) and made <strong>no PHY reset</strong> (the PC's own frames proved the receiver works); on v2.2, v3.1 and v3.2 the prediction (ARP bursts, PHY resets) was wrong for a reason worth knowing: their check (v2.2: keepalive) is a UDP send, and without <code>MR.FARP</code> the W5500 reuses the gateway MAC it cached at the first send, so after the gateway vanished they sent <strong>no ARP request at all in 12 min</strong> and their checks kept "succeeding". On v3.1/v3.2 this means the receiver check can never notice a deaf receiver once a gateway has answered once; v3.3's raw ARP request needs a reply every time. Deaf receiver by emulation (N4, <code>TEST_DEAF</code>): exactly one recovery PHY reset after three silent checks, none after; at 6 min instead of the pre-registered 3–5 min, because with a configured gateway that never answers, gateway and client take turns (strict verdict FAIL on timing).</p>
+<p><strong>Link down 180 s (N5, v3.3 only, amendment 1):</strong> PC adapter disabled for 180 s, twice: service back 8.3 and 8.6 s after it was enabled, 2 PHY resets during each outage (at 30 s and 90 s, as designed), no restart, outputs kept (PASS); the PC adapter survived both cycles.</p>
+<p><strong>Regression (production build).</strong> Power 21/21; load test 541/541; junk input 16/16; HTTP 21/21 and 414 for a 600-byte target; persistent clients 6/6; idle dose all answered (0–5 idle connections per port); DHCP A–E with syslog (renewals acknowledged while the receiver check ran); 10 Mbps half duplex (load 543/543); 50/50 USB-reset start-ups (median 9.16 s); millis rollover; stack low-water 190 B (FAULT_INJECTION build). <code>NET_STATUS</code> on unit 3: <code>VCC=5096</code>, <code>VCC_MIN=5073</code> mV (USB supply), <strong><code>BOD=2.7</code></strong> — the brown-out level the code analysis inferred, now measured.</p>
+<p><strong>Settings loss.</strong> In the first run (10 trials + 3 watchdog hangs) trial 8 was followed by a ~3.5-min outage that cleared by itself without a restart; three later steps fell in it (10/14). An instrumented re-run of 20 trials (capture, ping, PC address state, unit counters) passed 20/20, as did 20 trials on v3.1. A re-run under the original conditions (50 USB resets, then 10 trials) caught a second episode with the capture running: trial 5 answered only after 47 s; the unit sent its own ARP request with its correct address, then <strong>answered none of ~35 ARP requests from the PC for ~38 s with the link up</strong>, sent no address-check probes, and recovered by itself with no re-init, PHY reset or link change. <strong>A deaf receiver after the re-init's link renegotiation — mechanism (c), until now seen only on unit 2.</strong> The 03:48 outage had the same signature (~3.5 min). Tonight: 2 episodes in 40 settings-loss trials on v3.3 (two link negotiations each), 0 in 30 on v3.1; not significantly different, consistent with a chip/board property. Both cleared before v3.3's deaf check acted (~6 min on this bench, where gateway and client take turns). The event log couldn't show this either: each re-init now writes four records, and the hourly budget ran out (a log-economy fix is in §9).</p>
+<p><strong>Conformance (N8):</strong> same suite and criteria as §5.23, unit 3, 05:44–06:01 (<code>data/conformance/v33_*</code>). <strong>48 of 56 requirements pass</strong> (v3.1/v3.2 46, v2.2 26), 6 fail, 2 not verifiable without forged traffic. Newly passing: H6 (one ARP request per check, 1 to the gateway and 1 to the PC in 137 s) and W8 (414). Failing: H2, H3 (W5500 chip limits), D4 (DHCP from the fallback address), T6 (2-s send timeout), W7 (no <code>Host</code> check, kept for control systems that send hand-written HTTP), W9 (GET switching, kept). C7 measured exactly as on v3.1 (3 probes and the first announcement before use) and is scored by the same documented rule (RFC 5227 allows use after the first announcement): pass. Standards: 6 of 10 pass, as v3.1; RFC 1122 now fails only on the chip limits.</p>
 <h2>6. Discussion</h2>
 <p><strong>What explains the field symptom.</strong> The total loss (no ping, no ARP) can only come from the W5500 not answering at all:</p>
 <div class="table-wrap"><table>
@@ -1002,8 +1026,8 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <td>W5500 deaf after a link negotiation (sends, receives nothing)</td>
 <td>exactly</td>
 <td>unknown beyond 60 s; once cleared by itself after 97 s</td>
-<td>avoided 0/300 (not proven); <strong>no recovery if it happens on a network without a reachable gateway</strong></td>
-<td>~1 in 130 negotiations on one board (resets, port flaps)</td>
+<td>v3.0–v3.2: <strong>no recovery</strong> (their check runs on a cached gateway address, §5.26); v3.3: PHY reset after three silent checks</td>
+<td>~1 in 130 negotiations on unit 2; on unit 3 seen twice after v3.3 re-inits (38 s and ~3.5 min, both cleared by themselves; one captured)</td>
 </tr>
 <tr>
 <td>Socket starvation</td>
@@ -1027,7 +1051,8 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <p><strong>The Arduino Ethernet library</strong> is responsible for the starvation behaviour and the one-byte-per-packet output (§5.7). v2.2 made it worse (the permanent keepalive socket) and did not compensate.</p>
 <p><strong>v3.0 assessment.</strong> It fixes the reproduced defects and mechanism (a), and it matches or beats v2.2 everywhere it was measured. Five bugs were found and fixed during two days of testing (0x11 state, DHCP address per reboot, PHY reset on link bounce, PHY recovery assuming a gateway, identical temporary MACs). That is the expected cost of a rewrite; more may remain.</p>
 <p><strong>v3.1 assessment.</strong> It keeps v3.0's network layer and recovery, and adds standards conformance. On the final build every non-soak test passed, including settings loss with the outputs kept on, and v3.1 passed 46 of 56 conformance requirements against v2.2's 26. Its remaining failures are two chip limits, three small fixable items (ARP rate, <code>Host</code>, 414) and three deliberate trade-offs (DHCP from the fallback address, the 2-s send timeout, GET actions). Two bugs were found and fixed during the v3.1 work (a false conflict from the PC's own probe, and a timer in the split-command fix). <strong>It is not field-proven.</strong></p>
-<p><strong>v3.2 assessment (recommended as the official firmware).</strong> It is v3.1 with the 5 s self-check widened to the mode (<code>MR</code>), retransmission (<code>RTR</code>/<code>RCR</code>) and PHY configuration (<code>PHYCFGR</code>) registers. In the pre-registered single-register fault matrix it recovered from all 14 faults with no &ldquo;dead/needs-reset&rdquo; outcome and the outputs never moving — including the four v3.1 died on (ping block, retry count 0, forced 10-half, and the PHY power-down that reproduces the field symptom, back in 11–12 s), and with no regression on the faults v3.1 already handled (§5.24). It scores the same 46 of 56 on the conformance suite. Cost: +118 B flash (31,238 of 32,256) and three extra SPI reads per 5 s cycle; the TCP protocol, stored settings and the v2.2 EEPROM downgrade path are unchanged. <strong>It is not field-proven</strong>; adoption should be followed by the hands-on and real-load checks and a pilot (§7).</p>
+<p><strong>v3.2 assessment (recommended as the official firmware).</strong> It is v3.1 with the 5 s self-check widened to the mode (<code>MR</code>), retransmission (<code>RTR</code>/<code>RCR</code>) and PHY configuration (<code>PHYCFGR</code>) registers. In the pre-registered single-register fault matrix it recovered from all 14 faults with no "dead/needs-reset" outcome and the outputs never moving — including the four v3.1 died on (ping block, retry count 0, forced 10-half, and the PHY power-down that reproduces the field symptom, back in 11–12 s), and with no regression on the faults v3.1 already handled (§5.24). It scores the same 46 of 56 on the conformance suite (the change does not touch anything the suite measures). Cost: +118 B flash (31,238 of 32,256) and three extra SPI reads per 5 s cycle; the TCP protocol, stored settings and the v2.2 EEPROM downgrade path are unchanged. <strong>It is not field-proven</strong>; adoption should be followed by the hands-on and real-load checks and a pilot (§7).</p>
+<p><strong>v3.3 assessment (recommended as the official firmware).</strong> It is v3.2 with the gaps of §5.25 closed. In the overnight run it recovered from all 17 single-register faults (51 trials, 3–10 s, outputs never moved), including the PHY held in reset that leaves v3.2 dead; the link-down recovery alone brings a stuck PHY back in 40 s; the new receiver check sent one ARP request per check and made no false PHY reset when the gateway vanished; the whole regression suite passed. Twice in 40 settings-loss trials the chip came back deaf after the re-init's link renegotiation and cleared by itself (38 s, ~3.5 min; captured once, §5.26): mechanism (c), now seen on unit 3 too; faster detection after a re-init is the next step. Program memory is 99.5 % full (162 B free), so any later feature needs something taken out. <strong>It is not field-proven.</strong></p>
 <p><strong>Is v2.2 as good as v3.1/v3.2 on standards?</strong> No. Several standards show FAIL for both, because one failed item fails a standard, but v2.2 fails 25 requirements against v3.1/v3.2's 8. Only v2.2 lacks conflict detection, gives up on TCP after 18.4 s, deviates from RFC 2131 in its DHCP client and mishandles HTTP methods.</p>
 <hr />
 <h2>7. Limits of the evidence</h2>
@@ -1048,6 +1073,7 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <li><strong>The 13:05 event had one observer</strong> (the PC) and no capture, serial or switch counters; it did not recur in 133 further flaps of that port.</li>
 <li><strong>DHCP results come from one server</strong> (the M4250's own); other servers may answer v2.2's renewals differently. The strand after an outage follows from v2.2's code for any server.</li>
 <li><strong>Conformance suite:</strong> one PC as the only peer, tools written by the same author; requirements that need forged traffic (defending an address, the 10th-conflict rate limit) are not verified.</li>
+<li><strong>v3.3 overnight run:</strong> one box on a direct cable and USB, unattended; the deaf receiver tested by emulation only; the link-down test reduced to 2 cycles to protect the PC adapter (amendment 1); two self-clearing deaf episodes after re-inits (§5.26). The supply-sag test, the decisive one for the static-mode hypothesis, was not run (needs hands-on time).</li>
 <li><strong>Not exercised in v3.0:</strong> real loads; recovery from a real deaf PHY; behaviour at 49+ days except the simulated rollover; DHCP NAK; two units on DHCP; multi-day operation.</li>
 </ul>
 <hr />
@@ -1109,7 +1135,31 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <td>Measured (one bench, own tools)</td>
 </tr>
 <tr>
-<td>v3.0 / v3.1 prevents the field failure</td>
+<td>v2.2 cannot make a static unit stop answering ping by its own logic; every outside upset of the W5500 is permanent on it</td>
+<td>Code-read (§5.25)</td>
+</tr>
+<tr>
+<td>Unit 3's brown-out level is 2.7 V (Uno default)</td>
+<td>Measured (v3.3 <code>BOD=2.7</code>)</td>
+</tr>
+<tr>
+<td>A supply sag is the static-mode trigger</td>
+<td>Hypothesis (untested)</td>
+</tr>
+<tr>
+<td>A PHY held in reset leaves v3.2 dead; v3.3 recovers in 3–6 s</td>
+<td>Measured (§5.26)</td>
+</tr>
+<tr>
+<td>v3.3 recovers from all 17 single-register faults and passes the full regression</td>
+<td>Measured (§5.26; two self-clearing deaf episodes after re-inits)</td>
+</tr>
+<tr>
+<td>A W5500 can come back deaf after a link renegotiation on unit 3 as well (2 in 40 settings-loss trials on v3.3, cleared by themselves after 38 s and ~3.5 min)</td>
+<td>Measured (one episode captured)</td>
+</tr>
+<tr>
+<td>v3.0–v3.3 prevent the field failure</td>
 <td>Unknown (needs a pilot)</td>
 </tr>
 </tbody>
@@ -1117,16 +1167,19 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <hr />
 <h2>9. Next steps</h2>
 <ol>
+<li><strong>Supply-sag test (hands-on, highest value):</strong> unit on a lab supply (or the 5 V rail sagged with a MOSFET), USB unplugged; sags to 2.8–4.5 V for 10–500 ms and slow power-ups (0.1–2 s), with and without the 22 µF; v2.2 vs v3.3, pre-registered. Decides the leading hypothesis (§5.25).</li>
+<li><strong>Hardware for the next board revision:</strong> brown-out level 4.3 V (extended fuse <code>0xFC</code>, ISP), a reset supervisor instead of the 22 µF capacitor, the W5500 reset pin on a free GPIO, the blue LED off D4.</li>
+<li><strong>v3.3.1 candidates:</strong> fold the supply value into the re-init log record (log budget); stop alternating to a gateway that has stayed silent several times (faster deaf detection, §5.26); skip the receiver check while DHCP is renewing; faster deaf detection after a re-init (the two deaf episodes lasted 38 s and ~3.5 min; v3.3 acts after ~6 min where the configured gateway never answers).</li>
 <li><strong>Field facts:</strong> for each failing site, DHCP or static; DHCP server/router type and whether it was down or rebooted around the failure.</li>
 <li><strong>Field check before power-cycling a dead unit:</strong> on the site switch, is the unit's MAC still in the MAC table and is its port's receive counter rising? Yes → the unit still transmits (deaf receiver); no → it lost its settings or stopped.</li>
 <li><strong>v3.1 by hand on unit 3, then on the showroom box with real loads:</strong> D5/D6/D9 and LEDs; real power cycles from the Netio with USB unplugged; flash with the box's own MAC (<code>-DEPS_MAC_SUFFIX</code>), capacitor removed for the upload; switch the loads with the poller and flight recorder running. Any <code>REINIT</code>/<code>PHYRESET</code> count or logged W5500 re-init is the finding.</li>
 <li><strong>Persistence of the deaf state:</strong> catch a deaf start-up on unit 2 (DTR resets, register dump, switch counters) and leave it alone for ≥ 10 min.</li>
 <li><strong>DHCP:</strong> a switch reload with the M4250 as DHCP server (the realistic outage); another DHCP server type.</li>
-<li><strong>Pilot:</strong> v3.1 + flight recorder with per-unit MACs at sites that had failures. With no failure in N unit-days, the 95 % bound is ≈ 3/N.</li>
+<li><strong>Pilot:</strong> v3.3 + flight recorder with per-unit MACs at sites that had failures. With no failure in N unit-days, the 95 % bound is ≈ 3/N.</li>
 </ol>
 <hr />
 <h2>Appendix A: documents</h2>
-<p><code>docs/network-investigation.md</code> (v2.2 analysis and early bench results) · <code>docs/v3.0.md</code> (v3.0 design, changes, test notes) · <code>docs/comparison-protocol.md</code> + <code>docs/comparison-results.md</code> · <code>docs/w5500-hang-tests.md</code> + <code>docs/w5500-hang-results.md</code> · <code>docs/eps-firmware-review.html</code> (an earlier, internal summary page) · <code>docs/v3.1-standards.md</code> (v3.1 changes and tests) · <code>docs/conformance-suite.md</code> + <code>docs/conformance-results.md</code> (standards suite, v3.1 vs v2.2) · <code>docs/fault-matrix-tests.md</code> + <code>docs/fault-matrix-results.md</code> (single-register W5500 faults and link/reset tests, v3.1 vs v2.2) · <code>docs/HANDOVER.md</code> (bench state and how to continue).</p>
+<p><code>docs/network-investigation.md</code> (v2.2 analysis and early bench results) · <code>docs/v3.0.md</code> (v3.0 design, changes, test notes) · <code>docs/comparison-protocol.md</code> + <code>docs/comparison-results.md</code> · <code>docs/w5500-hang-tests.md</code> + <code>docs/w5500-hang-results.md</code> · <code>docs/eps-firmware-review.html</code> (an earlier, internal summary page) · <code>docs/v3.1-standards.md</code> (v3.1 changes and tests) · <code>docs/conformance-suite.md</code> + <code>docs/conformance-results.md</code> (standards suite, v3.1 vs v2.2) · <code>docs/fault-matrix-tests.md</code> + <code>docs/fault-matrix-results.md</code> (single-register W5500 faults and link/reset tests, v3.1 vs v2.2) · <code>docs/code-analysis.md</code> (code analysis of v2.2 with the Ethernet library, v3.1 and v3.2, 2026-10-12) · <code>docs/v3.3.md</code> (v3.3 changes and builds) · <code>docs/v3.3-tests.md</code> (v3.3 protocol, amendment and results) · <code>docs/HANDOVER.md</code> (bench state and how to continue).</p>
 <h2>Appendix B: chronology</h2>
 <div class="table-wrap"><table>
 <thead>
@@ -1217,8 +1270,36 @@ Bench work 2026-10-08 13:00 – 2026-10-11 15:12 · Repo <code>daveleo/EPS</code
 <td>Fault matrix Test 2 re-run: 16 valid v3.1 link drops, then the PC's adapter failed; aborted</td>
 </tr>
 <tr>
-<td>10-11 (afternoon)</td>
-<td>v3.2 candidate built; same 14-fault matrix on v3.2: recovers F6&ndash;F9 (incl. PHY power-down), no dead outcome; unit 3 restored to v3.1 production</td>
+<td>10-11 12:49–13:38</td>
+<td>Test 2 part 2b (USB-reset start-up) on v3.1 and v2.2: 200 each, 0 deaf</td>
+</tr>
+<tr>
+<td>10-11 13:44–15:12</td>
+<td>v3.2 candidate built; same 14-fault matrix ×3 on v3.2: recovers F6–F9 (incl. PHY power-down), no dead outcome; unit 3 restored to v3.1 production</td>
+</tr>
+<tr>
+<td>10-12 ~00:00</td>
+<td>Code analysis of v2.2 (+ Ethernet 2.0.2), v3.1, v3.2 (§5.25)</td>
+</tr>
+<tr>
+<td>10-12 00:30–00:56</td>
+<td>v3.3 built (G1–G5, BOD, 414); protocol committed; overnight run started</td>
+</tr>
+<tr>
+<td>10-12 00:56–02:52</td>
+<td>v3.3 test build: boot sanity, deaf emulation, 17-fault matrix ×3, F16</td>
+</tr>
+<tr>
+<td>10-12 02:52–04:02</td>
+<td>v3.3 production: gateway-gone test, full regression, fault/stack/rollover builds; the 03:48 outage</td>
+</tr>
+<tr>
+<td>10-12 04:02–04:10</td>
+<td>Instrumented settings-loss re-runs on v3.3 and v3.1 (20 each, all pass)</td>
+</tr>
+<tr>
+<td>10-12 04:10–</td>
+<td>F15/F17 and gateway-gone on v3.2, v3.1, v2.2; link-down on v3.3; conformance v3.3; reproduction run catches a deaf episode (06:10)</td>
 </tr>
 </tbody>
 </table></div>

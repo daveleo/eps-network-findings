@@ -88,10 +88,10 @@ details[open] summary { margin-bottom: 10px; }
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs the v3.x line · v3.2 recommended as official</div>
+  <div class="eyebrow">Expromo EPS · KS0304 (ATmega328P + W5500) · v2.2 vs the v3.x line · v3.3 recommended as official</div>
   <h1>Why EPS units drop off the network: what we know so far</h1>
-  <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250; the standards suite and the fault matrix on the real box, cabled to a PC. v3.0 is the network-layer rewrite, v3.1 adds the network standards, and <strong>v3.2</strong> (v3.1 + a wider chip self-check) <strong>is the firmware we recommend as official</strong> — <a href="why-v3-2.html">the case</a>. All tests pre-registered; every failure reported.</p>
-  <p class="meta">Status 2026-10-11 · full report: <a href="report.html">EPS Network Investigation</a></p>
+  <p class="sub">Field symptom: a unit randomly stops answering ping, web page and TCP control until its power is cycled. Bench: two bare boards and one real EPS box (10 V supply, six SSRs, 22 µF reset capacitor) on a NETGEAR M4250; the standards suite and the fault matrix on the real box, cabled to a PC. v3.0 is the network-layer rewrite, v3.1 adds the network standards, v3.2 widens the chip self-check, and <strong>v3.3</strong> (v3.2 + the gaps a code analysis found) <strong>is the firmware we recommend as official</strong> — <a href="why-v3-3.html">the case</a> · <a href="comparison.html">all versions compared</a>. All tests pre-registered; every failure reported.</p>
+  <p class="meta">Status 2026-10-12 · full report: <a href="report.html">EPS Network Investigation</a></p>
 </header>
 
 <section aria-labelledby="h-board">
@@ -106,12 +106,15 @@ details[open] summary { margin-bottom: 10px; }
         <li>A USB/DTR reset also resets the W5500; v2.2's own watchdog restarts don't.</li>
         <li>The Arduino Ethernet library writes its retry settings to the wrong W5500 registers.</li>
         <li><strong>Standards:</strong> v3.1 passes 46 of 56 pre-registered requirements, v2.2 26. Two failures shared by both are W5500 chip limits.</li>
+        <li><strong>Code analysis (2026-10-12):</strong> v2.2 can't make a static unit stop answering by its own logic; every outside upset of the chip is permanent on it. Unit 3's brown-out level is <strong>2.7 V</strong> (read by v3.3).</li>
+        <li><strong>v3.3</strong> recovers from all 17 single-register chip faults, including a PHY held in reset that leaves v3.2 dead.</li>
       </ul>
     </div>
     <div class="col">
       <h3><span class="dot" style="background:var(--warn)"></span>Open</h3>
       <ul>
-        <li><strong>What makes static-mode units drop off.</strong> Candidates: W5500 settings loss when real loads switch (not tested yet), deafness after a link negotiation (rare; can it last until a power cycle?).</li>
+        <li><strong>What makes static-mode units drop off.</strong> Leading hypothesis: a supply sag that browns out the network chip while the CPU runs on (brown-out level 2.7 V); needs a hands-on sag test. Other candidates: load switching (not tested), deafness after a link negotiation (rare).</li>
+        <li>Why the W5500 sometimes comes back deaf after a link negotiation: seen on unit 3 too (twice in 40 chip-reset trials on v3.3, 38 s and ~3.5 min, both cleared by themselves; one captured).</li>
         <li>Whether failing sites ran DHCP or static, and what their DHCP server did.</li>
         <li>Why the M4250 dropped the v2.2 DHCP bindings although it ACKed their renewals.</li>
         <li>v3.1 by hand (inputs, factory reset, LEDs, real power cycles), with real loads, and in the field.</li>
@@ -212,7 +215,8 @@ details[open] summary { margin-bottom: 10px; }
 </section>
 
 <section aria-labelledby="h-std">
-  <h2 id="h-std">Network standards: v3.1 / v3.2 vs v2.2</h2>
+  <h2 id="h-std">Network standards: v3.1 / v3.2 / v3.3 vs v2.2</h2>
+  <p class="note"><strong>v3.3 (run 2026-10-12, same suite and box): 48 of 56</strong> — the ARP rate to an absent gateway and the 414 for an over-long request now pass; RFC 1122 fails only on the two chip limits. The chart below shows the 2026-10-10 run (v3.1, v2.2); all four versions side by side: <a href="comparison.html#h-standards">comparison</a>.</p>
   <p class="note">56 requirements from 10 standards, pass criteria committed before either firmware was run, same tool and same box for both (2026-10-10). One bar per firmware and standard; each block is one requirement. A standard passes only if none of its requirements fails. The suite was run on v3.1; <strong>v3.2 scores identically</strong> (the wider self-check does not change anything the suite measures).</p>
   <div class="figure">
     <div class="legend"><span><i class="sw" style="background:var(--good)"></i>pass</span><span><i class="sw" style="background:var(--crit)"></i>fail</span><span><i class="sw" style="background:var(--neutral)"></i>not verified</span><span><i class="sw" style="background:var(--grid);border:1px solid var(--rule)"></i>not applicable</span></div>
@@ -255,22 +259,25 @@ details[open] summary { margin-bottom: 10px; }
 </section>
 
 <section aria-labelledby="h-faults">
-  <h2 id="h-faults">Single-register chip faults: which each firmware repairs (2026-10-11)</h2>
+  <h2 id="h-faults">Single-register chip faults: which each firmware repairs (2026-10-11/12)</h2>
   <p class="note">v3.1 checks five chip registers every 5 s and re-initialises if any is wrong. This test wrote <strong>one</strong> register fault at a time into the real box's own chip (a single-bit glitch is more likely than a full reset), 14 faults × 3 trials on each firmware, and watched every service for 120 s. Pre-registered; every trial reported. A fault passes only if all three trials recover with the registers restored and the outputs unmoved.</p>
   <div class="tw"><table>
-    <thead><tr><th>Fault (one register)</th><th><i class="sw" style="background:var(--v31,#2a78d6)"></i>v3.1</th><th><i class="sw" style="background:var(--v22,#eb6834)"></i>v2.2</th><th><i class="sw" style="background:var(--v32,#2a9d5c)"></i>v3.2</th></tr></thead>
+    <thead><tr><th>Fault (one register)</th><th><i class="sw" style="background:var(--v31,#2a78d6)"></i>v3.1</th><th><i class="sw" style="background:var(--v22,#eb6834)"></i>v2.2</th><th><i class="sw" style="background:var(--v32,#2a9d5c)"></i>v3.2</th><th><i class="sw" style="background:#7d4fd0"></i>v3.3</th></tr></thead>
     <tbody>
-      <tr><td>Chip soft reset (all settings zero)</td><td><span class="chip c-good">recovered 6–10 s</span></td><td><span class="chip c-crit">dead, needs power cycle</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td>IP address changed</td><td><span class="chip c-good">recovered ≤10 s</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td>MAC address changed</td><td><span class="chip c-good">recovered 5–10 s</span></td><td><span class="chip c-crit">wrong MAC kept</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td>Gateway changed</td><td><span class="chip c-good">repaired</span></td><td><span class="chip c-crit">wrong gateway kept</span></td><td><span class="chip c-good">repaired</span></td></tr>
-      <tr><td>Subnet mask → /32</td><td><span class="chip c-good">recovered 4–7 s</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td>Ping block (mode register)</td><td><span class="chip c-crit">dead (ping only; TCP/web fine)</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td><strong>PHY power-down</strong> — matches the field symptom</td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered 11–12 s</span></td></tr>
-      <tr><td>Link forced to 10 Mbps half</td><td><span class="chip c-warn">stays at 10 half</span></td><td><span class="chip c-warn">stays at 10 half</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td>TCP/ARP retry count 0</td><td><span class="chip c-crit">dead (ping ok, TCP/web not)</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td></tr>
-      <tr><td>Listening sockets closed / RX buffer 0</td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td></tr>
-      <tr><td>Listening port moved (control / web)</td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-crit">that service lost</span></td><td><span class="chip c-good">no effect</span></td></tr>
+      <tr><td>Chip soft reset (all settings zero)</td><td><span class="chip c-good">recovered 6–10 s</span></td><td><span class="chip c-crit">dead, needs power cycle</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 4–10 s</span></td></tr>
+      <tr><td>IP address changed</td><td><span class="chip c-good">recovered ≤10 s</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 3–5 s</span></td></tr>
+      <tr><td>MAC address changed</td><td><span class="chip c-good">recovered 5–10 s</span></td><td><span class="chip c-crit">wrong MAC kept</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 4–6 s</span></td></tr>
+      <tr><td>Gateway changed</td><td><span class="chip c-good">repaired</span></td><td><span class="chip c-crit">wrong gateway kept</span></td><td><span class="chip c-good">repaired</span></td><td><span class="chip c-good">repaired 6–7 s</span></td></tr>
+      <tr><td>Subnet mask → /32</td><td><span class="chip c-good">recovered 4–7 s</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 3–7 s</span></td></tr>
+      <tr><td>Ping block (mode register)</td><td><span class="chip c-crit">dead (ping only; TCP/web fine)</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 3–7 s</span></td></tr>
+      <tr><td><strong>PHY power-down</strong> — matches the field symptom</td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered 11–12 s</span></td><td><span class="chip c-good">recovered 4–6 s</span></td></tr>
+      <tr><td>Link forced to 10 Mbps half</td><td><span class="chip c-warn">stays at 10 half</span></td><td><span class="chip c-warn">stays at 10 half</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 6–10 s</span></td></tr>
+      <tr><td>TCP/ARP retry count 0</td><td><span class="chip c-crit">dead (ping ok, TCP/web not)</span></td><td><span class="chip c-crit">dead</span></td><td><span class="chip c-good">recovered</span></td><td><span class="chip c-good">recovered 10 s</span></td></tr>
+      <tr><td>Listening sockets closed / RX buffer 0</td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td></tr>
+      <tr><td>Listening port moved (control / web)</td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-crit">that service lost</span></td><td><span class="chip c-good">no effect</span></td><td><span class="chip c-good">no effect</span></td></tr>
+      <tr><td><strong>PHY held in reset</strong> (new, 2026-10-12)</td><td><span class="chip c-crit">dead (power cycle)</span></td><td><span class="chip c-crit">dead (power cycle)</span></td><td><span class="chip c-crit">dead (power cycle)</span></td><td><span class="chip c-good">recovered 3–6 s</span></td></tr>
+      <tr><td>PHY power-down written once (new)</td><td><span class="chip c-warn">PHY runs, wrong register kept</span></td><td><span class="chip c-warn">PHY runs, wrong register kept</span></td><td><span class="chip c-good">recovered 5–26 s</span></td><td><span class="chip c-good">recovered 6–7 s</span></td></tr>
+      <tr><td>PHY held in reset, link-down recovery only (v3.3 without the bit-7 check)</td><td>—</td><td>—</td><td>—</td><td><span class="chip c-good">recovered 40 s</span></td></tr>
     </tbody>
   </table></div>
   <p>v3.1 repairs every register it checks (chip, IP, MAC, mask, gateway) in seconds with the outputs untouched, and survives every socket fault; v2.2 needs a power cycle for a chip reset, wrong IP or wrong mask, and keeps a wrong MAC or gateway for good. Four faults fall outside v3.1's check and leave both older firmwares dead: the ping block, retry count 0, a forced 10-half link, and — the one that reproduces the field symptom exactly — PHY power-down. <strong>v3.2 widens the check to cover exactly those four, and in the re-run it recovered from every one of the 14 faults with no &ldquo;dead&rdquo; outcome anywhere and the outputs never moving — including the PHY power-down that matches the field failure, back in 11–12 s with no reset.</strong> (Ping block and PHY power-down passed 2 of 3 trials outright; the third lost only a single stray ping after service was already back.)</p>
@@ -284,8 +291,26 @@ details[open] summary { margin-bottom: 10px; }
   </table></div>
   <p class="note">A USB reset also resets the network chip, so this is the closest bench proxy for a power event. Neither firmware came up deaf; the deaf start-up has only ever appeared on one of the three boards (unit 2, 4 events).</p>
   <div class="tw" style="margin-top:4px"><table>
-    <thead><tr><th>Candidate v3.2 — tested, recommended as the field candidate</th></tr></thead>
-    <tbody><tr><td style="white-space:normal">Widens v3.1's 5 s check to the registers it ignored — the mode register (ping block), the retry registers, and the PHY configuration (power-down and forced mode) — and re-initialises on a mismatch, as it already does for a bad address. Run against the same 14-fault matrix on the real box: it recovered from all four faults v3.1 died on, <strong>including the PHY power-down that matches the field symptom</strong> (11–12 s, no reset), with no dead outcome, no relay movement and no false re-init in steady state. Cost: +118 bytes of flash (97 % full) and three extra chip reads per cycle. On these results v3.2 replaces v3.1 as the field candidate.</td></tr></tbody>
+    <thead><tr><th>v3.2 (2026-10-11) — superseded by v3.3</th></tr></thead>
+    <tbody><tr><td style="white-space:normal">Widens v3.1's 5 s check to the registers it ignored — the mode register (ping block), the retry registers, and the PHY configuration (power-down and forced mode) — and re-initialises on a mismatch, as it already does for a bad address. Run against the same 14-fault matrix on the real box: it recovered from all four faults v3.1 died on, <strong>including the PHY power-down that matches the field symptom</strong> (11–12 s, no reset), with no dead outcome, no relay movement and no false re-init in steady state. Cost: +118 bytes of flash (97 % full) and three extra chip reads per cycle. On these results v3.2 replaced v3.1 as the field candidate.</td></tr></tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-v33">
+  <h2 id="h-v33">Code analysis and v3.3 (2026-10-12)</h2>
+  <p class="note">All three firmwares and the Arduino Ethernet library were read in full against the W5500 datasheet, the RFCs and AVR practice. Then v3.3 was built and tested overnight against every earlier version on the same real box; protocol committed before the run, every trial reported.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Finding or test</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Can v2.2 make a static unit stop answering by itself?</td><td>No: after start-up, neither v2.2 nor the library writes any register that decides whether the chip answers ping. But every outside upset is permanent on v2.2 (settings lost; PHY stopped, which also disables its stall watchdog; chip not detected at start-up, after which it runs on IP 0.0.0.0).</td></tr>
+      <tr><td>Brown-out level of the board</td><td><strong>2.7 V</strong>, measured on unit 3 (v3.3 reads the fuse). The CPU needs 3.78 V at 16 MHz and the W5500 2.97 V: a sag can brown the chip out while the CPU runs on. Leading hypothesis for static sites; untested.</td></tr>
+      <tr><td>Gaps in v3.2</td><td>PHY reset bit not checked; no recovery from a link that stays down; deaf-receiver check needs a gateway that answered since the last link-up; no supply visibility; 20 ARP requests in 4 s to an absent gateway.</td></tr>
+      <tr><td>v3.3 fault matrix (17 faults × 3)</td><td>all recovered (3–10 s) or no effect; no dead, latent or slow trial; outputs never moved</td></tr>
+      <tr><td>Gateway disappears (12 min watched)</td><td>v2.2, v3.1 and v3.2 send no ARP request at all after it vanishes: the chip reuses the address it cached, so their checks keep "succeeding" and could never notice a deaf receiver either. v3.3 sends one ARP request per check, needs a reply each time, and made no false PHY reset (the PC's own frames proved reception).</td></tr>
+      <tr><td>Deaf receiver (emulated)</td><td>v3.3: one PHY reset after three silent checks (6 min), none after</td></tr>
+      <tr><td>v3.3 regression</td><td>power 21/21, load 541/541, junk 16/16, HTTP 21/21 + 414, persistent 6/6, idle dose all answered, DHCP A–E, 10 Mbps, 50/50 start-ups, rollover, stack 190 B free</td></tr>
+      <tr><td>Settings loss (FAULT_INJECTION build)</td><td>38 of 40 recovered in 2–8 s; twice the chip came back <strong>deaf</strong> after its re-init (38 s and ~3.5 min, cleared by themselves). Captured: the unit sent its own ARP request but answered none of ~35 from the PC, then recovered with no firmware action. v3.1: 30/30.</td></tr>
+    </tbody>
   </table></div>
 </section>
 
@@ -299,6 +324,7 @@ details[open] summary { margin-bottom: 10px; }
       <tr><td>v3.0 avoids deaf start-ups because v2.2 never resets the PHY</td><td>Both get a W5500 reset; v3.0 negotiates a second time. Why v3.0 had 0/300 is open</td></tr>
       <tr><td>v2.2 retries 3 times in ~1.4 s</td><td>The library writes the wrong registers: the W5500 runs with 72 ms × 8 retries</td></tr>
       <tr><td>"Dead until reset" for deaf start-ups</td><td>Never watched beyond 60 s; one deaf event cleared by itself after 97 s</td></tr>
+      <tr><td>A W5500 soft reset (MR.RST) doesn't reset the PHY</td><td>The datasheet says MR.RST initialises "all internal registers"; what is measured is only that a watchdog restart doesn't drop the link</td></tr>
       <tr><td>Standards suite: v2.2 gives every unit the same MAC</td><td>The MAC in the v2.2 sketch is set per unit before flashing (Expromo's IEEE block); v2.2 passes IEEE 802 MAC addressing</td></tr>
     </tbody>
   </table></div>
@@ -311,8 +337,9 @@ details[open] summary { margin-bottom: 10px; }
     <tbody>
       <tr><td>Field facts: DHCP or static per failing site; DHCP server type; outages around the failures</td><td>whether the DHCP strand explains the field cases</td></tr>
       <tr><td>Before power-cycling a dead unit: is its MAC still in the site switch's MAC table, is its port receiving?</td><td>deaf receiver (still transmits) vs settings lost</td></tr>
-      <tr><td>v3.1 by hand on the real box: inputs, factory reset, LED colours, real power cycles with USB unplugged</td><td>the checks the bench scripts can't do</td></tr>
-      <tr><td>v3.1 on the showroom box with real loads (flight recorder running)</td><td>whether load switching makes the W5500 lose its settings (v3.1 logs each re-init)</td></tr>
+      <tr><td>Supply-sag test: 5 V rail sagged to 2.8–4.5 V and slow power-ups, USB unplugged, v2.2 vs v3.3</td><td>whether a sag is the static-mode trigger</td></tr>
+      <tr><td>v3.3 by hand on the real box: inputs, factory reset, LED colours, real power cycles with USB unplugged</td><td>the checks the bench scripts can't do</td></tr>
+      <tr><td>v3.3 on the showroom box with real loads (log with supply voltage running)</td><td>whether load switching makes the W5500 lose its settings, and at what supply</td></tr>
       <tr><td>Catch a deaf start-up on unit 2 and leave it alone ≥ 10 min</td><td>whether deafness lasts until a power cycle</td></tr>
     </tbody>
   </table></div>

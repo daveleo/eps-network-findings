@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).parent
-PAGES = ["why-v3-2.html", "executive-summary.html", "findings.html", "report.html"]
+PAGES = ["why-v3-3.html", "comparison.html", "why-v3-2.html", "executive-summary.html", "findings.html", "report.html"]
 LINKS = {
     "https://claude.ai/artifact/J9VgdUUEVsGfzwXQDGdx4w": "executive-summary.html",
     "https://claude.ai/artifact/5QSELy6vCJndKRkRy8Edn6": "findings.html",
@@ -21,7 +21,7 @@ LINKS = {
 DROP = [(r" \(summary page; published at https://claude\.ai/artifact/[A-Za-z0-9]+\)", " (an earlier, internal summary page)")]
 NAV = ('<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 \'IBM Plex Mono\',Consolas,monospace;'
        'display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a>'
-       '<a href="why-v3-2.html">Why v3.2</a>'
+       '<a href="why-v3-3.html">Why v3.3</a><a href="comparison.html">All versions compared</a>'
        '<a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a>'
        '<a href="report.html">Full report</a></nav>')
 

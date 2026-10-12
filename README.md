@@ -1,16 +1,18 @@
 # EPS network findings
 
-Public documents on why Expromo EPS power sequencers (Keyestudio KS0304: ATmega328P + WIZnet W5500) drop off the network on firmware v2.2, what firmware 3.0 changed, and the current final firmware 3.1 (with a network-standards comparison against v2.2).
+Public documents on why Expromo EPS power sequencers (Keyestudio KS0304: ATmega328P + WIZnet W5500) drop off the network on firmware v2.2, a code analysis of the firmware, and the firmware line that fixes it: v3.0–v3.2 and **v3.3, the recommended official firmware**, with every version compared on the same bench.
 
 **Read online:** https://daveleo.github.io/eps-network-findings/
 
 | Document | For |
 |---|---|
-| [Executive summary](https://daveleo.github.io/eps-network-findings/executive-summary.html) | decision makers and IT: what changed in v3.1, comparison with v2.2 on the bench and against network standards, fit with enterprise network practice, limits, rollout |
+| [Why v3.3 should be official](https://daveleo.github.io/eps-network-findings/why-v3-3.html) | the decision brief: what the code analysis found, what v3.3 changes, the evidence, limits |
+| [All versions compared](https://daveleo.github.io/eps-network-findings/comparison.html) | v2.2, v3.1, v3.2, v3.3 side by side: features, 17-fault matrix, recovery, standards, regression |
+| [Executive summary](https://daveleo.github.io/eps-network-findings/executive-summary.html) | decision makers and IT: what changed from v2.2 to v3.3, comparison with v2.2 on the bench and against network standards, fit with enterprise network practice, limits, rollout |
 | [Findings at a glance](https://daveleo.github.io/eps-network-findings/findings.html) | engineers: status of each finding, charts and statistics |
 | [Full investigation report](https://daveleo.github.io/eps-network-findings/report.html) | the record: setup, methods, every test and result, limits |
 
-Status 2026-10-10 (v3.1 final). The firmware itself and the raw bench data are kept in Expromo's private repository.
+Status 2026-10-12 (v3.3 recommended as official). The earlier brief [Why v3.2](https://daveleo.github.io/eps-network-findings/why-v3-2.html) stays online. The firmware itself and the raw bench data are kept in Expromo's private repository.
 
 ## Updating
 

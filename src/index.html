@@ -38,26 +38,32 @@ header { display: grid; gap: 12px; }
 <header>
   <div class="eyebrow">Expromo · EPS power sequencer</div>
   <h1>Why EPS units drop off the network, and the firmware that fixes it</h1>
-  <p class="lede">EPS units on firmware v2.2 sometimes stop answering on the network until their power is cycled. These documents describe the bench investigation (three units, a NETGEAR M4250 switch and a real EPS box), what it found, the rewritten firmware, and the case for making <strong>v3.2</strong> the official firmware — the first that recovers by itself from every failure we could reproduce, including the one that matches the field dropout.</p>
-  <p class="meta">Status 2026-10-11 · Expromo Product Department</p>
+  <p class="lede">EPS units on firmware v2.2 sometimes stop answering on the network until their power is cycled. These documents describe the bench investigation (three units, a NETGEAR M4250 switch and a real EPS box), a full code analysis, what was found, the rewritten firmware, and the case for making <strong>v3.3</strong> the official firmware — v3.2 plus the gaps the code analysis found, tested overnight against every earlier version.</p>
+  <p class="meta">Status 2026-10-12 · Expromo Product Department</p>
 </header>
 <div class="docs">
-  <a class="doc lead" href="why-v3-2.html">
+  <a class="doc lead" href="why-v3-3.html">
     <span class="for">Start here · the recommendation</span>
-    <h2>Why v3.2 should be official</h2>
-    <p>The decision brief: what changed from v2.2 to v3.2, the tested side-by-side evidence, the fault matrix that settles it, the cost and compatibility, the honest limits, and the case for adoption. Links into the detail behind each point.</p>
+    <h2>Why v3.3 should be official</h2>
+    <p>The decision brief: what the code analysis found, what v3.3 changes, the tested evidence, the cost and compatibility, the honest limits, and the case for adoption. Links into the detail behind each point.</p>
     <span class="len">One page · decision brief</span>
+  </a>
+  <a class="doc" href="comparison.html">
+    <span class="for">For everyone · the tables</span>
+    <h2>All versions compared</h2>
+    <p>v2.2, v3.1, v3.2 and v3.3 side by side: what each does, the full 17-fault matrix, recovery scenarios, network standards, everyday behaviour and resource use.</p>
+    <span class="len">Tables</span>
   </a>
   <a class="doc" href="executive-summary.html">
     <span class="for">For decision makers and IT</span>
     <h2>Executive summary</h2>
-    <p>What changed from v2.2 to v3.2, how it compares on the bench and against network standards, how it fits enterprise network practice, what we can and can't promise yet, and the rollout plan.</p>
+    <p>What changed from v2.2 to v3.3, how it compares on the bench and against network standards, how it fits enterprise network practice, what we can and can't promise yet, and the rollout plan.</p>
     <span class="len">One page</span>
   </a>
   <a class="doc" href="findings.html">
     <span class="for">For engineers</span>
     <h2>Findings at a glance</h2>
-    <p>What is established, open or excluded; the mechanisms that reproduce the field symptom; charts of the DHCP failure, failure rates with confidence intervals, v2.2 vs v3.0 under load, the standards suite, and the single-register fault matrix (v2.2 / v3.1 / v3.2).</p>
+    <p>What is established, open or excluded; the mechanisms that reproduce the field symptom; charts of the DHCP failure, failure rates with confidence intervals, v2.2 vs v3.0 under load, the standards suite, and the single-register fault matrix (v2.2 / v3.1 / v3.2 / v3.3).</p>
     <span class="len">Charts and tables</span>
   </a>
   <a class="doc" href="report.html">
@@ -65,6 +71,12 @@ header { display: grid; gap: 12px; }
     <h2>Full investigation report</h2>
     <p>Setup, methods, every test and result with its evidence grade, corrections to earlier conclusions, limits of the evidence, and next steps.</p>
     <span class="len">Long read</span>
+  </a>
+  <a class="doc" href="why-v3-2.html">
+    <span class="for">For the record · previous brief</span>
+    <h2>Why v3.2 should be official</h2>
+    <p>The earlier decision brief (2026-10-11), kept as it was. v3.3 contains v3.2 unchanged and adds the gap fixes.</p>
+    <span class="len">One page · superseded by v3.3</span>
   </a>
 </div>
 </div>

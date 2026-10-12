@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-12 — v3.3: new brief, comparison page, everything bumped to v3.3
+- New page `why-v3-3.html`: decision brief for v3.3 (what the code analysis found, the four gaps and how v3.3 closes them, the tested evidence against v3.2, cost/compatibility, honest limits incl. the unexplained 3.5-min outage, the case).
+- New page `comparison.html`: v2.2, v3.1, v3.2 and v3.3 side by side — features, the 17-fault matrix (generated from the trial CSVs), recovery scenarios (settings loss, DHCP, PHY held in reset, stuck link, gateway gone, deaf receiver, link down, hang, start-up), standards per standard (26/46/46/48 of 56), everyday-behaviour regression.
+- Executive summary, findings and landing page bumped to v3.3 (code-analysis section, v3.3 column in the fault table, standards 48/56, rollout with the supply-sag test and hardware changes); report regenerated from `EPS/docs/report.md` (§5.25 code analysis, §5.26 v3.3).
+- `why-v3-2.html` kept at its URL with a "superseded by v3.3" note; existing links unchanged. Nav: Why v3.3, All versions compared.
+
 ## 2026-10-11 — Reframed around v3.2 as the official firmware
 - All pages now present v3.2 (v3.1 + the wider chip self-check) as the recommended official firmware, not v3.1. Executive summary retitled to v3.2; verdict, key numbers, "what changed from v2.2 to v3.2", standards and limits/rollout updated; the chip-health and PHY rows note the v3.2 widening; links point to the new brief.
 - Findings and report headers/verdicts reframed to v3.2 (standards noted as identical for v3.1 and v3.2; the fault matrix already carried v3.2). Historical test labels (e.g. "v3.1 final build re-run", which firmware a test ran on) kept accurate.

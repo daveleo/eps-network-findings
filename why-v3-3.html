@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why v3.3 Should Be Official</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: decision brief for adopting v3.3; verdict first, then what the code analysis found, what v3.3 changes, the tested evidence, cost/compatibility, honest limits and the case. Every claim links to where it is justified. */
+:root {
+  --page: #f4f6f6; --surface: #fcfcfb; --ink: #0f1a1d; --ink-2: #4b585c; --muted: #7c8689; --rule: #dde2e3;
+  --accent: #1d6b73; --accent-soft: #e3f0f1;
+  --v22: #eb6834; --v31: #2a78d6; --v32: #0ca30c; --v33: #7d4fd0;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b; --neutral: #a9b3b6;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --v33: #a07ae8; --neutral: #6b7477; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --v33: #a07ae8; --neutral: #6b7477; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--font-body); margin: 0; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 38px; }
+section { display: grid; gap: 14px; min-width: 0; }
+h1 { font: 600 2.3rem/1.1 var(--font-head); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.45rem/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.3 var(--font-head); margin: 0; }
+p { margin: 0; max-width: 72ch; }
+.eyebrow { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.lede { font-size: 1.12rem; line-height: 1.55; color: var(--ink-2); max-width: 70ch; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .9em; }
+header { display: grid; gap: 12px; }
+.why { font: 12.5px/1.4 var(--font-mono); }
+.verdict { background: var(--accent-soft); border: 1px solid var(--rule); border-left: 4px solid var(--v33); padding: 18px 22px; display: grid; gap: 10px; }
+.verdict p { max-width: 82ch; }
+.points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pt { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.pt .n { font: 600 1.9rem/1.1 var(--font-head); font-variant-numeric: tabular-nums; }
+.pt .l { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+.steps { display: grid; gap: 12px; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--c, var(--neutral)); padding: 14px 18px; display: grid; gap: 6px; }
+.step.g { --c: var(--v33); }
+.step .tag { font: 500 11.5px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.step p { font-size: 14px; }
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--page); }
+th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+tr:last-child td { border-bottom: 0; }
+td strong { font-weight: 600; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-mono); padding: 4px 8px; border: 1px solid var(--rule); border-radius: 999px; white-space: nowrap; background: var(--page); color: var(--ink); }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--neutral)); }
+.c-good { --c: var(--good); } .c-warn { --c: var(--warn); } .c-crit { --c: var(--crit); } .c-neutral { --c: var(--neutral); }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul, .box ol { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; font-size: 14px; }
+.box.case { border-left: 4px solid var(--v33); }
+.docs { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; }
+@media (max-width: 820px) { .points { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } h1 { font-size: 1.85rem; } }
+</style>
+<style>body{margin:0}nav a{color:var(--accent)}</style>
+</head>
+<body>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="why-v3-3.html">Why v3.3</a><a href="comparison.html">All versions compared</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Expromo EPS power sequencer · the case for firmware 3.3</div>
+  <h1>Why v3.3 should be the official firmware</h1>
+  <p class="lede">v3.3 is v3.2 with the four gaps a full code analysis found in it closed. v3.2 was already the first firmware that recovers by itself from every chip fault we could reproduce. v3.3 also recovers from a PHY held in reset, gets a stuck link back on its own, can spot a deaf receiver on networks without a gateway, measures its own supply, and sends one ARP request per check instead of twenty. It was tested overnight against v2.2, v3.1 and v3.2 on the same real box. Nothing a customer or control system sees has changed.</p>
+  <p class="meta">Status 2026-10-12 · Bench: one real EPS box (10 V supply, six SSRs), USB to a PC, direct cable · Protocol committed before the run; every trial reported, including the failures</p>
+</header>
+
+<section aria-labelledby="h-verdict">
+  <h2 id="h-verdict">Recommendation</h2>
+  <div class="verdict">
+    <p><strong>Adopt v3.3 as the official EPS firmware, in place of v2.2 (field) and v3.2 (previous recommendation).</strong></p>
+    <p>v3.2 was already the first firmware that recovered by itself from every chip fault we had reproduced. A full code analysis then found four gaps in its self-check, and the overnight tests confirmed them: <strong>a PHY held in reset leaves v3.2 dead until a power cycle</strong>, and its deaf-receiver check stops testing anything once the gateway has answered once. v3.3 closes these gaps. On the same real box it <strong>recovered from all 17 single-register chip faults (51 trials, 3–10 s, outputs never moved)</strong>, brought a stuck link back with nothing but its new link-down recovery, made no false resets when the gateway vanished, and passed the whole regression suite. It also measures its own supply, which matters because the leading explanation for the field dropouts is a supply sag.</p>
+    <p>One result is not clean and is reported as such: twice in 40 chip-reset trials the network chip came back <strong>deaf</strong> after its re-init (it transmitted but answered nothing) for 38 s and about 3.5 minutes, then recovered by itself. This is the rare "deaf after a link negotiation" state the investigation found on another board; v3.3's new check is built for it but needs ~6 minutes on this bench, so faster detection is the next step. This is a bench result, not field proof. <strong>The recommended path: make v3.3 official, run the supply-sag test, then pilot it.</strong></p>
+  </div>
+  <div class="points">
+    <div class="pt"><div class="n">17 / 17</div><div class="l">single-register chip faults v3.3 recovers from, 3 trials each, no "dead" outcome. On the new fault (PHY held in reset) v3.2 is dead; v3.3 is back in 3–6 s.</div></div>
+    <div class="pt"><div class="n">2.7 V</div><div class="l">the brown-out level the box itself reports (v3.3 reads the fuse): well below the 3.8 V the CPU and the ~4 V the network chip need. That makes a supply sag the leading suspect.</div></div>
+    <div class="pt"><div class="n">1 ARP / min</div><div class="l">to the gateway, whether or not it answers (v3.2: 20 in 4 s), and each one really tests reception. Program memory: 99.5 % used.</div></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-analysis">
+  <h2 id="h-analysis">What the code analysis found</h2>
+  <p>v2.2, v3.1 and v3.2 were read in full, together with the Arduino Ethernet library v2.2 runs on, against the W5500 datasheet, the network RFCs and AVR hardware practice (2026-10-12).</p>
+  <div class="two">
+    <div class="box">
+      <h3>About the field dropouts (v2.2, static IP)</h3>
+      <ul>
+        <li><strong>No software-only cause.</strong> After start-up, neither v2.2 nor the library ever writes the chip registers that decide whether it answers ping. Something outside the firmware has to upset the chip.</li>
+        <li><strong>But every upset is permanent on v2.2.</strong> Three routes end in "dead until power cycle": the chip loses its settings; the PHY stops (v2.2's own watchdog switches itself off whenever the link is down); or the chip isn't detected at start-up (the unit then runs on IP 0.0.0.0 with a normal-looking LED).</li>
+        <li><strong>The most likely trigger is the supply.</strong> The board's brown-out level is 2.7 V; the CPU needs 3.8 V at 16 MHz and the network chip 2.97 V on its 3.3 V rail. A sag can brown the chip out while the CPU runs on. The box itself reports <code>BOD=2.7</code> (v3.3 reads the fuse).</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>About v3.2: four gaps</h3>
+      <ul>
+        <li><strong>G1</strong>: the self-check ignored the PHY's reset bit; a PHY held in reset went unnoticed.</li>
+        <li><strong>G2</strong>: nothing recovered a link that stayed down.</li>
+        <li><strong>G3</strong>: the deaf-receiver check needed a gateway that had answered <em>since the last link-up</em>, so it could never fire on a closed AV network, or for a receiver that goes deaf right at link-up (the only way it has been seen).</li>
+        <li><strong>G5</strong>: no supply measurement, so the leading hypothesis couldn't be checked from field logs. It also sent 20 ARP requests in 4 s to an absent gateway (RFC 1122: at most 1/s).</li>
+      </ul>
+    </div>
+  </div>
+  <p class="why">Full analysis with code references and datasheet quotes: <code>docs/code-analysis.md</code> in the firmware repository · <a href="report.html">full report</a></p>
+</section>
+
+<section aria-labelledby="h-changes">
+  <h2 id="h-changes">What v3.3 changes</h2>
+  <p>Everything a customer, installer or control system sees stays the same: outputs, timing, inputs, LED, the TCP protocol, web URLs and stored settings. The changes are in how the unit watches and repairs its own network chip.</p>
+  <div class="steps">
+    <div class="step g"><div class="tag">G1 · PHY reset bit</div><p>The 5 s self-check also compares the PHY reset bit. If the PHY is held in reset, the chip is set up again, as for any other wrong register.</p></div>
+    <div class="step g"><div class="tag">G2 · link stays down</div><p>After 30 s without link the PHY is reset, then after 60 s, 120 s … up to ~32 min while it stays down. With the cable really out this does no harm.</p></div>
+    <div class="step g"><div class="tag">G3 · deaf receiver</div><p>Once a minute, one ARP request to the gateway or, where none answers, to the last client on the subnet. For 2 s the chip listens to every frame. A check counts as silent only if nothing at all was heard; three silent checks in a row reset the PHY. This works on closed networks, keeps working after a link-up, ignores a gateway that has simply gone away while other traffic is heard, and sends one ARP request per check instead of 20.</p></div>
+    <div class="step g"><div class="tag">G5 · supply monitor</div><p>The 5 V rail is measured continuously against the chip's internal reference. <code>NET_STATUS</code> shows <code>VCC</code>, <code>VCC_MIN</code> and the brown-out fuse <code>BOD</code>, and every chip re-init is logged with the lowest supply of the 5 s before it.</p></div>
+    <div class="step g"><div class="tag">Standards</div><p>An over-long web request now gets 414 instead of 400 (RFC 9112).</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-measured">
+  <h2 id="h-measured">What the bench measured</h2>
+  <div class="tw"><table>
+    <thead><tr><th>What was tested (unit 3, 2026-10-12)</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>Original 14 single-register faults, 3 trials each</td><td>all recovered (2026-10-11)</td><td><strong>all recovered, 3–10 s</strong></td></tr>
+      <tr><td><strong>PHY held in reset</strong> (new fault, G1)</td><td><span class="chip c-crit">dead 3/3 (power cycle needed)</span></td><td><span class="chip c-good">recovered 3–6 s (3/3)</span></td></tr>
+      <tr><td>PHY held in reset, only the link-down recovery active (G2)</td><td>—</td><td><span class="chip c-good">recovered 40 s (3/3)</span></td></tr>
+      <tr><td>PHY power-down, the field-matching fault</td><td>recovered 11–12 s</td><td><strong>recovered 4–6 s</strong></td></tr>
+      <tr><td>Gateway disappears, 12 min watched (G3)</td><td>no ARP at all after it vanished: the check kept "succeeding" on a cached address</td><td><strong>one ARP request per check, no false PHY reset</strong></td></tr>
+      <tr><td>Deaf receiver (emulated, G3)</td><td>cannot be detected (see above)</td><td>one PHY reset after three silent checks (6 min), none after</td></tr>
+      <tr><td>Link down 180 s, cable side (G2)</td><td>—</td><td>service back 8.3–8.6 s after the link returned (2/2); 2 PHY resets during each outage, no restart, outputs kept</td></tr>
+      <tr><td>Everyday behaviour (power, load, junk input, HTTP, persistent clients, idle connections, DHCP, 10 Mbps, 50 start-ups, rollover)</td><td>passed on v3.1 (same network layer)</td><td><strong>all passed</strong>; 414 for an over-long request</td></tr>
+      <tr><td>Settings loss (chip reset by command)</td><td>v3.1: 30/30 recovered</td><td>38/40 recovered in 2–8 s; twice the chip came back deaf for 38 s / ~3.5 min and cleared by itself (captured once)</td></tr>
+      <tr><td>Network-standard requirements, of 56</td><td>46 (as v3.1)</td><td><strong>48</strong> (ARP rate and 414 fixed)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="why">Every version side by side, with the full fault matrix and the standards per requirement: <a href="comparison.html">all versions compared</a>.</p>
+</section>
+
+<section aria-labelledby="h-cost">
+  <h2 id="h-cost">What v3.3 costs, and what it keeps</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Cost</h3>
+      <ul>
+        <li><strong>Program memory is now 99.5 % full</strong> (32,094 of 32,256 bytes; v3.2 used 31,238). The web page's style and two texts were shortened to make room. Any later feature will need something taken out.</li>
+        <li>Once a minute, socket 0 spends up to 2 s listening to raw frames. Ping, TCP and web keep working during it (background ping loss in the fault matrix: 0.52 %, lower than v3.2's 1.09 %).</li>
+        <li>A PHY reset after a long link loss briefly restarts link negotiation. That only happens while the link is down anyway.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Unchanged</h3>
+      <ul>
+        <li><strong>The TCP control protocol</strong> (<code>POWER_ON/OFF/STATUS</code>, <code>OUTx</code>): Companion, eXcontrol, Crestron and Q-SYS work as before. <code>NET_STATUS</code> only gains three fields at the end.</li>
+        <li><strong>Outputs, sequence timing, D5/D6/D9, the RGB LED</strong> and the web addresses.</li>
+        <li><strong>Stored settings and the per-unit MAC</strong>; the v2.2 EEPROM layout is kept, so any version can be flashed back.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-limits">
+  <h2 id="h-limits">Unbiased: what this does and doesn't prove</h2>
+  <div class="two">
+    <div class="box">
+      <h3>What we can say</h3>
+      <ul>
+        <li>On every bench measurement v3.3 is at least as good as v3.2, and it recovers from a fault (PHY held in reset) that leaves v3.2 dead.</li>
+        <li>Its deaf-receiver check actually tests reception every minute; v3.2's stopped testing after the first successful send.</li>
+        <li>The change is reversible and invisible to customers and control systems.</li>
+        <li>Field units on v3.3 will record the supply voltage at every chip fault, so the pilot can test the supply hypothesis.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>What we can't say yet</h3>
+      <ul>
+        <li>That v3.3 ends the field dropouts. The trigger for static-IP units is still a hypothesis (supply sag), and the sag test needs hands-on time.</li>
+        <li>How v3.3 handles a <em>real</em> deaf receiver: it has only been seen on one board; the new check is tested by emulation.</li>
+        <li>Anything about a network chip that stops answering on SPI: no firmware on this board can reset it, because the reset pin isn't wired.</li>
+        <li>Field rates: one real box, a direct cable, three trials per fault. The same team wrote the firmware and the tests (mitigated by pre-registered criteria, published before the run).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-case">
+  <h2 id="h-case">The case for making v3.3 official</h2>
+  <div class="box case">
+    <ol>
+      <li><strong>It closes measured gaps.</strong> The PHY-in-reset fault kills v3.2 and not v3.3; the receiver check works where v3.2's couldn't.</li>
+      <li><strong>It is safe.</strong> All 17 faults recovered, the whole regression passed, nothing customer-facing changed, and any version can be flashed back.</li>
+      <li><strong>It measures what we need to know next.</strong> Supply voltage at every chip fault and the brown-out fuse, the two facts the supply hypothesis turns on.</li>
+      <li><strong>What remains is hardware-side:</strong> the supply-sag test, real loads, and on the next board revision a 4.3 V brown-out level, a reset supervisor and a reset line for the network chip.</li>
+    </ol>
+    <p class="meta">Recommended next steps: adopt v3.3, run the supply-sag test, flash per-unit MACs, then pilot at sites that had dropouts. Full plan: <a href="executive-summary.html#h-rollout">rollout (executive summary)</a>.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-docs">
+  <h2 id="h-docs">The rest of the investigation</h2>
+  <div class="docs">
+    <a href="comparison.html">All versions compared</a>
+    <a href="executive-summary.html">Executive summary</a>
+    <a href="findings.html">Findings at a glance</a>
+    <a href="report.html">Full investigation report</a>
+    <a href="why-v3-2.html">Why v3.2 (previous brief)</a>
+  </div>
+</section>
+</div>
+
+</body>
+</html>

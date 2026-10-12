@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPS Firmware Compared</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: comparison of all firmware versions (v2.2, v3.1, v3.2, v3.3): features, fault matrix, recovery scenarios, standards, regression, resources, limits. Tables carry the data; every row links to where it is described. */
+:root {
+  --page: #f4f6f6; --surface: #fcfcfb; --ink: #0f1a1d; --ink-2: #4b585c; --muted: #7c8689; --rule: #dde2e3;
+  --accent: #1d6b73; --accent-soft: #e3f0f1;
+  --v22: #eb6834; --v31: #2a78d6; --v32: #0ca30c; --v33: #7d4fd0;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b; --neutral: #a9b3b6;
+  --good-bg: #e2f4e2; --warn-bg: #fdf1d6; --crit-bg: #f8e1e1; --na-bg: #eef1f1;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --v33: #a07ae8; --neutral: #6b7477; --good-bg: #17301a; --warn-bg: #3a2f12; --crit-bg: #3a1a1a; --na-bg: #222a2c; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --v22: #d95926; --v31: #3987e5; --v32: #37b437; --v33: #a07ae8; --neutral: #6b7477; --good-bg: #17301a; --warn-bg: #3a2f12; --crit-bg: #3a1a1a; --na-bg: #222a2c; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--font-body); margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 38px; }
+section { display: grid; gap: 14px; min-width: 0; }
+h1 { font: 600 2.3rem/1.1 var(--font-head); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.45rem/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.3 var(--font-head); margin: 0; }
+p { margin: 0; max-width: 74ch; }
+.eyebrow { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.lede { font-size: 1.12rem; line-height: 1.55; color: var(--ink-2); max-width: 72ch; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .9em; }
+header { display: grid; gap: 12px; }
+.why { font: 12.5px/1.4 var(--font-mono); }
+.verdict { background: var(--accent-soft); border: 1px solid var(--rule); border-left: 4px solid var(--v33); padding: 18px 22px; display: grid; gap: 10px; }
+.verdict p { max-width: 84ch; }
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; min-width: 820px; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 11px; border-bottom: 1px solid var(--rule); }
+th { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--page); }
+th .k { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td strong { font-weight: 600; }
+td.v33 { background: color-mix(in srgb, var(--v33) 6%, transparent); }
+.fc { display: inline-block; padding: 2px 7px; border-radius: 4px; font: 12px/1.4 var(--font-mono); white-space: nowrap; }
+.fc.ok { background: var(--good-bg); } .fc.tail { background: var(--good-bg); }
+.fc.latent, .fc.mixed { background: var(--warn-bg); } .fc.dead { background: var(--crit-bg); } .fc.na { background: var(--na-bg); color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.legend .fc { white-space: normal; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; font-size: 14px; }
+.docs { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } h1 { font-size: 1.85rem; } }
+</style>
+<style>body{margin:0}nav a{color:var(--accent)}</style>
+</head>
+<body>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="why-v3-3.html">Why v3.3</a><a href="comparison.html">All versions compared</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a></nav>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Expromo EPS power sequencer · v2.2 · v3.1 · v3.2 · v3.3</div>
+  <h1>EPS firmware: every version compared</h1>
+  <p class="lede">Four firmwares, one table each: what they do, how each one handles 17 different corruptions of the network chip, how they recover when the link, the gateway or the receiver fails, how many network-standard requirements they meet, and how they behave day to day. Everything was measured on the same real EPS box with the same pre-registered tools; where a version wasn't tested, the table says so.</p>
+  <p class="meta">Status 2026-10-12 · unit 3 (real EPS box), direct cable to a PC · v2.2 field firmware, v3.1 (2026-10-10), v3.2 (2026-10-11), v3.3 (2026-10-12 overnight) · every trial reported</p>
+</header>
+
+<section aria-labelledby="h-verdict">
+  <h2 id="h-verdict">In one paragraph</h2>
+  <div class="verdict"><p><strong>v3.3 is the most robust of the four on every measurement we have, and it is the one we recommend as official.</strong> v2.2 needs a power cycle after most network faults; v3.1 recovers from many but dies on four chip faults including the one that matches the field symptom; v3.2 recovers from those but is dead on a PHY held in reset and its receiver check stops testing anything once the gateway has answered once. v3.3 recovers from all 17 faults, really tests its receiver every minute, and records the supply voltage at every chip fault. None of them is field-proven yet, and the leading field trigger (a supply sag) is still to be tested by hand.</p></div>
+</section>
+
+<section aria-labelledby="h-features">
+  <h2 id="h-features">What each version does</h2>
+  <p>Pins, outputs, sequence timing, inputs, the LED, the TCP control protocol and the stored settings are the same in all four; only the network layer differs. v3.1 → v3.2 → v3.3 are small steps on the same rewritten driver.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Area</th><th><i class="k" style="background:var(--v22)"></i>v2.2 (field)</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody>
+      <tr><td>Network driver</td><td>Arduino Ethernet 2.0.2</td><td>own W5500 driver</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>Connections</td><td>4 sockets shared by everything, one held by the keepalive; idle or half-open connections never closed</td><td>8 sockets, fixed per service; idle web connections closed after 5 s, oldest control connection evicted</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>Web page output</td><td>one TCP segment per byte (~3,600 per view)</td><td>buffered, 2–3 segments</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>DHCP</td><td>library: blocks up to 60 s, strands on its fallback</td><td>RFC 2131, never blocks, keeps asking</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>Address conflict detection</td><td>none</td><td>RFC 5227</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>TCP give-up time</td><td>18.4 s (library writes the W5100 register addresses)</td><td>102 s (RFC 1122)</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>Chip self-check every 5 s</td><td>none</td><td>version, IP, MAC, mask, gateway</td><td>+ mode, retry, PHY config bits</td><td class="v33">+ <strong>PHY reset bit</strong></td></tr>
+      <tr><td>PHY stops with the link down</td><td>never recovered</td><td>never recovered</td><td>only if a config bit changed</td><td class="v33"><strong>PHY reset after 30 s</strong>, backing off to ~32 min</td></tr>
+      <tr><td>Receiver goes deaf (link up, hears nothing)</td><td>never detected</td><td>gateway probe, only if the gateway answered since the last link-up</td><td>same</td><td class="v33"><strong>gateway or last client; survives a link-up; counts only when nothing at all is heard</strong></td></tr>
+      <tr><td>ARP requests to a gateway that is gone</td><td>9 every 30 s</td><td>20 in 4 s, every minute</td><td>same</td><td class="v33"><strong>1 per minute</strong> (RFC 1122)</td></tr>
+      <tr><td>Over-long web request</td><td>no answer</td><td>400</td><td>400</td><td class="v33"><strong>414</strong> (RFC 9112)</td></tr>
+      <tr><td>Event log (survives power cuts)</td><td>none</td><td>96 events</td><td>same</td><td class="v33">+ supply voltage at every chip re-init</td></tr>
+      <tr><td>Supply and brown-out readout</td><td>none</td><td>none</td><td>none</td><td class="v33"><strong><code>VCC</code>, <code>VCC_MIN</code>, <code>BOD</code></strong> in <code>NET_STATUS</code></td></tr>
+      <tr><td>Syslog</td><td>none</td><td>RFC 5424, optional</td><td>same</td><td class="v33">same</td></tr>
+      <tr><td>Flash used (of 32,256 B) / RAM globals (of 2,048 B)</td><td class="num">29,876 / 736</td><td class="num">31,120 / 1,364</td><td class="num">31,238 / 1,364</td><td class="num v33">32,094 / 1,407</td></tr>
+    </tbody>
+  </table></div>
+  <p class="why">Why each change was made: <a href="why-v3-3.html">why v3.3</a> · <a href="why-v3-2.html">why v3.2</a> · <a href="findings.html#h-mech">mechanisms (findings)</a> · <a href="report.html">full report</a></p>
+</section>
+
+<section aria-labelledby="h-faults">
+  <h2 id="h-faults">Fault matrix: one corrupted chip register at a time</h2>
+  <p>Each fault is written into the real box's own W5500 by the firmware (test builds only); the PC sends only ping, a control command and a web request, and watches every service for 120 s. Three trials per fault and firmware, pre-registered criteria. F1–F14 for v2.2/v3.1/v3.2 were run on 2026-10-11; F15–F17 and all of v3.3 on the night of 2026-10-12.</p>
+  <div class="legend">
+    <span class="fc ok">recovered by itself / no effect</span>
+    <span class="fc tail">"tail": recovered; one stray ping lost in the last 30 s (≈0.4 %/ping test artefact)</span>
+    <span class="fc latent">keeps running with the wrong setting</span>
+    <span class="fc dead">dead until a power cycle</span>
+  </div>
+  <div class="tw"><table class="fmt"><thead><tr><th>Fault (one W5500 register)</th><th>v2.2</th><th>v3.1</th><th>v3.2</th><th>v3.3</th></tr></thead><tbody>
+<tr><td><strong>F1</strong> Chip soft reset (all settings lost)</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (6–10 s)</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (6–10 s)</span></td><td><span class="fc ok">recovered (4–10 s) 3/3</span></td></tr>
+<tr><td><strong>F2</strong> IP address changed</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (10 s)</span></td><td><span class="fc ok">recovered (5–10 s) 3/3</span></td><td><span class="fc ok">recovered (3–5 s) 3/3</span></td></tr>
+<tr><td><strong>F3</strong> MAC changed</td><td><span class="fc latent">latent 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (5–10 s)</span></td><td><span class="fc ok">recovered (6–10 s) 3/3</span></td><td><span class="fc ok">recovered (4–6 s) 3/3</span></td></tr>
+<tr><td><strong>F4</strong> Gateway changed</td><td><span class="fc mixed">tail 2/3, latent 1/3</span></td><td><span class="fc ok">recovered (6 s) 3/3</span></td><td><span class="fc ok">recovered (3–7 s) 3/3</span></td><td><span class="fc ok">recovered (6–7 s) 3/3</span></td></tr>
+<tr><td><strong>F5</strong> Mask changed</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc ok">recovered (4–7 s) 3/3</span></td><td><span class="fc tail">ok 1/3, tail 2/3 (5 s)</span></td><td><span class="fc ok">recovered (3–7 s) 3/3</span></td></tr>
+<tr><td><strong>F6</strong> Ping block (mode register)</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (4–7 s)</span></td><td><span class="fc ok">recovered (3–7 s) 3/3</span></td></tr>
+<tr><td><strong>F7</strong> PHY power-down (field match)</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (11–12 s)</span></td><td><span class="fc ok">recovered (4–6 s) 3/3</span></td></tr>
+<tr><td><strong>F8</strong> PHY forced 10 Mbps half</td><td><span class="fc latent">latent 3/3</span></td><td><span class="fc latent">latent 3/3</span></td><td><span class="fc ok">recovered (4–10 s) 3/3</span></td><td><span class="fc ok">recovered (6–10 s) 3/3</span></td></tr>
+<tr><td><strong>F9</strong> Retry count 0</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc ok">recovered (3–5 s) 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (10 s)</span></td></tr>
+<tr><td><strong>F10</strong> Control listeners closed</td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc tail">ok 1/3, tail 2/3</span></td><td><span class="fc ok">no effect 3/3</span></td></tr>
+<tr><td><strong>F11</strong> Control listen port changed</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td></tr>
+<tr><td><strong>F12</strong> Web listeners closed</td><td><span class="fc tail">ok 2/3, tail 1/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3</span></td></tr>
+<tr><td><strong>F13</strong> Web listen port changed</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3</span></td></tr>
+<tr><td><strong>F14</strong> Control RX buffer 0</td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td><td><span class="fc ok">no effect 3/3</span></td></tr>
+<tr><td><strong>F15</strong> PHY held in reset (new)</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc ok">recovered (3–6 s) 3/3</span></td></tr>
+<tr><td><strong>F17</strong> PHY power-down written once (new)</td><td><span class="fc mixed">tail 1/3, latent 2/3</span></td><td><span class="fc mixed">tail 2/3, latent 1/3</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (5–26 s)</span></td><td><span class="fc tail">ok 2/3, tail 1/3 (6–7 s)</span></td></tr>
+<tr><td><strong>F16</strong> F15 with only the link-down recovery (v3.3 build without the bit-7 check)</td><td><span class="fc na">—</span></td><td><span class="fc na">—</span></td><td><span class="fc na">—</span></td><td><span class="fc ok">recovered (40 s) 3/3</span></td></tr>
+</tbody></table></div>
+
+  <p class="meta">Recovery times are from fault injection to all three services answering again. "tail" is the end-of-trial ping check catching a single stray miss after service was already back; it also hits faults that cannot affect ping. Background ping loss in recovered trials: v3.1 1.97 % (0.43 % without one MAC trial that flapped ~60 s), v3.2 1.09 %, v3.3 0.52 %.</p>
+</section>
+
+<section aria-labelledby="h-recovery">
+  <h2 id="h-recovery">Recovery scenarios</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Scenario</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody><tr><td>Network chip loses all its settings (chip reset by command)</td><td><span class="fc dead">dead until power cycle (4/4)</span></td><td><span class="fc ok">recovered 2–7 s, outputs kept (30/30)</span></td><td><span class="fc ok">recovered (fault matrix F1, 3/3)</span></td><td class="v33"><span class="fc mixed">recovered 2–8 s (38/40); twice the chip came back deaf for 38 s / ~3.5 min, cleared by itself</span></td></tr><tr><td>DHCP server away during a renewal</td><td><span class="fc dead">stranded until power cycle</span></td><td><span class="fc ok">keeps asking, recovers by itself</span></td><td><span class="fc ok">as v3.1</span></td><td class="v33"><span class="fc ok">DHCP sequence A–E passed</span></td></tr><tr><td><strong>PHY held in reset</strong> (link down, new fault F15)</td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td><span class="fc dead">dead 3/3</span></td><td class="v33"><span class="fc ok">recovered 3–6 s (3/3)</span></td></tr><tr><td>PHY stuck with the link down, registers look right (F16)</td><td><span class="fc dead">no recovery (code)</span></td><td><span class="fc dead">no recovery (code)</span></td><td><span class="fc dead">no recovery (code)</span></td><td class="v33"><span class="fc ok">PHY reset after 30 s: back at 40 s (3/3)</span></td></tr><tr><td>Gateway disappears (router reboot), 12 min watched</td><td><span class="fc latent">keepalive uses the cached address: no ARP after it vanished (no recovery logic to trigger)</span></td><td><span class="fc latent">same as v3.2: 1 ARP while present, none after; the check keeps "succeeding"</span></td><td><span class="fc latent">no ARP after it vanished: the check keeps "succeeding" on a cached address</span></td><td class="v33"><span class="fc ok">1 ARP request per check; no false PHY reset</span></td></tr><tr><td>Receiver goes deaf with the link up</td><td><span class="fc dead">never detected</span></td><td><span class="fc dead">not detectable once the gateway answered (cached address), nor without a gateway</span></td><td><span class="fc dead">same as v3.1</span></td><td class="v33"><span class="fc ok">3 silent checks → PHY reset (emulated: once, at 6 min); two real episodes after re-inits cleared by themselves first (38 s, ~3.5 min)</span></td></tr><tr><td>Link down 180 s (cable or switch side)</td><td><span class="fc ok">back when the link returns (switch port flaps, 10-09)</span></td><td><span class="fc ok">back when the link returns (16/16 link drops, 10-11)</span></td><td><span class="fc na">not run</span></td><td class="v33"><span class="fc ok">back 8.3–8.6 s after the link returns (2/2); 2 harmless PHY resets per outage</span></td></tr><tr><td>Main-loop hang</td><td><span class="fc ok">watchdog restart (outputs off)</span></td><td><span class="fc ok">watchdog restart ~25 s (3/3)</span></td><td><span class="fc ok">as v3.1</span></td><td class="v33"><span class="fc ok">watchdog restart 25 s (3/3 outside the outage)</span></td></tr><tr><td>Start-up after a USB reset (resets the network chip too)</td><td><span class="fc ok">200/200</span></td><td><span class="fc ok">200/200</span></td><td><span class="fc na">not run</span></td><td class="v33"><span class="fc ok">50/50, median 9.2 s</span></td></tr></tbody>
+  </table></div>
+  <p class="why">Details: <a href="findings.html#h-dhcp">DHCP strand</a> · <a href="findings.html#h-v33">code analysis and v3.3</a> · <a href="report.html">full report §5.20–5.26</a></p>
+</section>
+
+<section aria-labelledby="h-standards">
+  <h2 id="h-standards">Network standards (56 pre-registered requirements, 10 standards)</h2>
+  <p>Pass criteria written down before any firmware was run; same tool, same box. A standard passes only if all its requirements pass. v3.2 was not run through the suite: its only change from v3.1 is the health check, which nothing in the suite measures, so its column repeats v3.1's.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Standard</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody><tr><td>IEEE 802.3 Ethernet</td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass (as v3.1)</span></td><td class="v33"><span class="fc ok">pass</span></td></tr><tr><td>IEEE 802 MAC addressing</td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass (as v3.1)</span></td><td class="v33"><span class="fc ok">pass</span></td></tr><tr><td>RFC 826 ARP</td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass (as v3.1)</span></td><td class="v33"><span class="fc ok">pass</span></td></tr><tr><td>IEEE 802.1D/Q end station</td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass (as v3.1)</span></td><td class="v33"><span class="fc ok">pass</span></td></tr><tr><td>RFC 5227 address conflict detection</td><td><span class="fc dead">fail: 6 items</span></td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass (as v3.1)</span></td><td class="v33"><span class="fc ok">pass (2 not verifiable without forged traffic)</span></td></tr><tr><td>RFC 5424/5426 syslog</td><td><span class="fc na">not available</span></td><td><span class="fc ok">pass</span></td><td><span class="fc ok">pass (as v3.1)</span></td><td class="v33"><span class="fc ok">pass</span></td></tr><tr><td>RFC 2131/2132 DHCP client</td><td><span class="fc dead">fail: 7 items</span></td><td><span class="fc latent">fail: 1 item</span></td><td><span class="fc latent">fail: 1 item (as v3.1)</span></td><td class="v33"><span class="fc latent">fail: 1 item (kept: asks from its fallback address)</span></td></tr><tr><td>HTTP (RFC 9110/9112)</td><td><span class="fc dead">fail: 7 items</span></td><td><span class="fc latent">fail: 3 items</span></td><td><span class="fc latent">fail: 3 items (as v3.1)</span></td><td class="v33"><span class="fc latent">fail: 2 items (kept: GET switching, no Host check)</span></td></tr><tr><td>TCP (RFC 9293/1122)</td><td><span class="fc dead">fail: 2 items</span></td><td><span class="fc latent">fail: 1 item</span></td><td><span class="fc latent">fail: 1 item (as v3.1)</span></td><td class="v33"><span class="fc latent">fail: 1 item (kept: 2-s send timeout)</span></td></tr><tr><td>RFC 1122 host requirements</td><td><span class="fc dead">fail: 3 items</span></td><td><span class="fc latent">fail: 3 items</span></td><td><span class="fc latent">fail: 3 items (as v3.1)</span></td><td class="v33"><span class="fc latent">fail: 2 items, both chip limits (ARP rate fixed)</span></td></tr><tr><td><strong>Requirements passed, of 56</strong></td><td><strong>26</strong></td><td><strong>46</strong></td><td><strong>46</strong></td><td class="v33"><strong>48</strong></td></tr></tbody>
+  </table></div>
+  <p class="why">Per requirement: <a href="findings.html#h-std">findings</a> · <a href="executive-summary.html#h-standards">executive summary</a></p>
+</section>
+
+<section aria-labelledby="h-regression">
+  <h2 id="h-regression">Everyday behaviour (regression)</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Test</th><th><i class="k" style="background:var(--v22)"></i>v2.2</th><th><i class="k" style="background:var(--v31)"></i>v3.1</th><th><i class="k" style="background:var(--v32)"></i>v3.2</th><th><i class="k" style="background:var(--v33)"></i>v3.3</th></tr></thead>
+    <tbody><tr><td>Power and output sequence (21 checks)</td><td>reference behaviour</td><td>21/21</td><td>as v3.1</td><td class="v33">21/21</td></tr><tr><td>Load test, short (idle connections, then Companion + eXcontrol + browser)</td><td>control port dead with 2 idle web connections (1 of 30 answered)</td><td>541/541</td><td>as v3.1</td><td class="v33">541/541</td></tr><tr><td>Idle connections held open, up to 5 per port</td><td>control port dead from 2</td><td>800/800 answered</td><td>as v3.1</td><td class="v33">all answered</td></tr><tr><td>Persistent controller connections</td><td>not supported</td><td>6/6</td><td>as v3.1</td><td class="v33">6/6</td></tr><tr><td>Junk and malformed input</td><td>—</td><td>16/16</td><td>as v3.1</td><td class="v33">16/16</td></tr><tr><td>HTTP methods and malformed requests</td><td>every method served as GET</td><td>21/21</td><td>as v3.1</td><td class="v33">21/21, plus 414</td></tr><tr><td>DHCP sequence (no server, lease, server gone, address in use)</td><td>strands after an outage, restarts at renewals</td><td>pass</td><td>as v3.1</td><td class="v33">pass</td></tr><tr><td>10 Mbps half duplex</td><td>—</td><td>pass (load 543/544)</td><td>as v3.1</td><td class="v33">pass (load 543/543)</td></tr><tr><td>millis() rollover at 49.7 days (simulated)</td><td>—</td><td>pass</td><td>as v3.1</td><td class="v33">pass</td></tr><tr><td>Lowest free stack seen</td><td>~0.45 KB (computed)</td><td>243 B</td><td>as v3.1</td><td class="v33">190 B</td></tr></tbody>
+  </table></div>
+  <p class="meta">v3.2 shares v3.1's network layer apart from the health check, so its everyday behaviour was not re-measured separately; "as v3.1" marks that.</p>
+</section>
+
+<section aria-labelledby="h-limits">
+  <h2 id="h-limits">What these tables don't show</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Measured</h3>
+      <ul><li>All four firmwares on the same real box (10 V supply, six SSRs, no loads), same harness, three trials per fault.</li><li>v3.3 overnight 2026-10-12: 51 fault-matrix trials, 50 USB-reset start-ups, the full regression suite, link-down, gateway-gone and deaf-receiver tests.</li><li>The box's brown-out level (2.7 V) and supply (≈ 5.1 V on USB), read by v3.3 itself.</li><li>Twice in 40 chip-reset trials on v3.3 the network chip came back deaf after its re-init (38 s and ~3.5 min), then recovered by itself; one episode captured (transmitting, answering nothing). v3.1: 0 in 30.</li></ul>
+    </div>
+    <div class="box">
+      <h3>Not tested yet</h3>
+      <ul>
+        <li><strong>Supply sags and slow power-up.</strong> The leading hypothesis for the field dropouts (the box reports a 2.7 V brown-out level). Needs the USB cable out to really cut power, so it needs hands-on time.</li>
+        <li><strong>Real loads</strong> switched by the SSRs, multi-day operation and other switch brands.</li>
+        <li><strong>A real deaf receiver.</strong> It has only ever appeared on one board; v3.3's handling of it is tested by emulation.</li>
+        <li><strong>A W5500 that stops answering on SPI.</strong> No firmware on this board can reset it (no reset pin wired); it needs a hardware change.</li>
+        <li>Field rates: one box, three trials per fault. These are behaviours, not failure rates.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-docs">
+  <h2 id="h-docs">The rest of the investigation</h2>
+  <div class="docs">
+    <a href="why-v3-3.html">Why v3.3 should be official</a>
+    <a href="executive-summary.html">Executive summary</a>
+    <a href="findings.html">Findings at a glance</a>
+    <a href="report.html">Full investigation report</a>
+    <a href="why-v3-2.html">Why v3.2 (previous brief)</a>
+  </div>
+</section>
+</div>
+
+</body>
+</html>
