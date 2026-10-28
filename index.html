@@ -41,20 +41,26 @@ header { display: grid; gap: 12px; }
 <style>body{margin:0}nav a{color:var(--accent)}</style>
 </head>
 <body>
-<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="supply-sag.html">Supply sag (root cause)</a><a href="why-v3-3.html">Why v3.3</a><a href="comparison.html">All versions compared</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a><a href="supply-sag-da.html" lang="da">På dansk</a></nav>
+<nav style="max-width:1040px;margin:0 auto;padding:14px 20px 0;font:13px/1.4 'IBM Plex Mono',Consolas,monospace;display:flex;flex-wrap:wrap;gap:6px 18px"><a href="index.html">All documents</a><a href="review.html">Evidence review</a><a href="supply-sag.html">Supply sag (bench study)</a><a href="why-v3-3.html">Why v3.3</a><a href="comparison.html">All versions compared</a><a href="executive-summary.html">Executive summary</a><a href="findings.html">Findings at a glance</a><a href="report.html">Full report</a><a href="supply-sag-da.html" lang="da">På dansk</a></nav>
 
 <div class="wrap">
 <header>
   <div class="eyebrow">Expromo · EPS power sequencer</div>
   <h1>Why EPS units drop off the network, and the firmware that fixes it</h1>
-  <p class="lede">EPS units on firmware v2.2 sometimes stop answering on the network until their power is cycled. These documents describe the bench investigation (three units, a NETGEAR M4250 switch and a real EPS box), a full code analysis, what was found, the rewritten firmware, and the case for making <strong>v3.3</strong> the official firmware. A bench study (2026-10-27/28) has now <strong>reproduced the fault from a supply sag</strong>, traced it to a slow-rising supply edge, and shown it needs a hardware fix — start there.</p>
+  <p class="lede">EPS units on firmware v2.2 sometimes stop answering on the network until their power is cycled. These documents describe the bench investigation (three units, a NETGEAR M4250 switch and a real EPS box), a full code analysis, what was found, the rewritten firmware, and the case for making <strong>v3.3</strong> the official firmware. A bench study (2026-10-27/28) found a real hardware weakness: a <strong>slow-rising supply</strong> leaves the Ethernet chip dead on one board. An independent <strong>evidence review</strong> (2026-10-28) checked every claim against the raw data. That the field failures come from a supply dip is <strong>not established</strong>. Start there.</p>
   <p class="meta">Status 2026-10-28 · Expromo Product Department</p>
 </header>
 <div class="docs">
-  <a class="doc lead" href="supply-sag.html">
-    <span class="for">Start here · root cause (updated · 2026-10-28)</span>
-    <h2>Supply sag is the trigger — and it needs a hardware fix</h2>
-    <p>The field fault reproduced on the bench: a slow-rising supply edge wedges the Ethernet chip until a power cycle. Graphs of the power-up and sag tests, why firmware, the reset line and the 22 µF capacitor don't fix it (bench Test 0), and the hardware options — a power-path load switch for a clean power-up, hold-up energy, or a separate supply.</p>
+  <a class="doc lead" href="review.html">
+    <span class="for">Start here · evidence review (2026-10-28)</span>
+    <h2>What the evidence supports, and what it doesn't</h2>
+    <p>Every claim traced back to the raw logs, scripts, photos and firmware. The theory as a six-link chain with each link graded, two method errors and a data correction, what each failure does to the LED walls, the proposed fixes re-scored, what the pilot can prove, product and UX findings, verdicts, and the cheapest decisive next steps.</p>
+    <span class="len">One page · executive summary, charts, verdicts</span>
+  </a>
+  <a class="doc" href="supply-sag.html">
+    <span class="for">Bench study · under review</span>
+    <h2>Supply-sag bench tests</h2>
+    <p>The power-up and sag tests on one pilot box: a slow-rising supply edge leaves the Ethernet chip dead until a power cycle, and reset signals and the 22 µF capacitor don't fix it. Some conclusions on this page are corrected by the evidence review.</p>
     <span class="len">One page · tests and graphs</span>
   </a>
   <a class="doc" href="why-v3-3.html">
@@ -64,9 +70,9 @@ header { display: grid; gap: 12px; }
     <span class="len">One page · decision brief</span>
   </a>
   <a class="doc" href="supply-sag-da.html" lang="da">
-    <span class="for">På dansk · årsagen (ny)</span>
-    <h2>Spændingsdyk er udløseren</h2>
-    <p>Feltfejlen genskabt på bænken: et forsyningsdyk ned i et smalt spændingsbånd hænger Ethernet-chippen indtil strømafbrydelse. Grafer, og hvorfor firmware og 22 µF-kondensatoren ikke løser det.</p>
+    <span class="for">På dansk · bænkforsøg (under revision)</span>
+    <h2>Spændingsdyk: bænkforsøgene</h2>
+    <p>En langsomt stigende forsyning efterlader Ethernet-chippen død på én boks indtil strømafbrydelse. Om det er årsagen til fejlene i felten, er ikke påvist. Se evidensgennemgangen (på engelsk).</p>
     <span class="len">Én side · test og grafer</span>
   </a>
   <a class="doc" href="hvorfor-v3-3.html" lang="da">

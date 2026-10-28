@@ -1,4 +1,4 @@
-<title>Supply Sag: Root Cause Found</title>
+<title>Supply Sag Bench Study</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -66,7 +66,8 @@ td strong { font-weight: 600; }
 <div class="wrap">
 <header>
   <div class="eyebrow">Expromo EPS power sequencer · bench investigation</div>
-  <h1>Supply sag is the trigger — and it needs a hardware fix</h1>
+  <div class="verdict" style="border-left-color:var(--warn)"><p><strong>Corrected 2026-10-28 by the <a href="review.html">evidence review</a>.</strong> The slow-ramp result on this board stands. Three things on this page don't survive the raw data:</p><ul style="margin:0;padding-left:1.15em;display:grid;gap:6px;max-width:82ch"><li>The two "running dip → deaf" results were judged only 4 s after the dip. v3.3 needs ~10 s to answer after a reboot, and with a 10 s wait all 9 dips just rebooted.</li><li>The "100 ms" ramp's real length was never recorded. It was 20 verified Modbus writes, so likely 0.2–2 s.</li><li>That a few-ms mains dip sags the 10 V supply has never been measured.</li></ul><p>Read this page as a <strong>bench study of one board</strong>, not as a proven field root cause.</p></div>
+  <h1>Supply sag: what the bench showed on one board</h1>
   <p class="lede">The field fault (a unit that stops answering the network until it is power-cycled) has now been reproduced on the bench with a programmable supply. A dip that pulls the board's 5 V rail into a narrow "no-man's-land" band leaves the Ethernet chip wedged — alive but deaf — until power is removed. We tested firmware, the 22 µF reset capacitor, and the board's reset line itself: <strong>none of them fix it</strong>. The fault is set by a <strong>slow-rising supply edge</strong> — a clean, fast power-up is always fine — so the fix is a small change on the <strong>power path</strong> that guarantees the board only ever powers up cleanly. Specific components are in bench validation.</p>
   <p class="meta">Bench, 2026-10-27 and 2026-10-28 (Test 0) · one pilot box (firmware v3.3), RuiDeng RD6006 lab supply replacing the 10 V unit · supply controlled and the board read over the network · every trial reported</p>
 </header>

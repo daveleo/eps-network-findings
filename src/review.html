@@ -1,0 +1,480 @@
+<title>EPS Evidence Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an independent desk re-analysis of the whole EPS investigation. Executive summary
+   first, then the theory as a chain of claims, the evidence per link with charts, method
+   errors and data corrections, firmware/outputs behaviour, fixes re-scored, the pilot's
+   statistical power, product/UX findings, alternatives, verdicts and ranked next actions. */
+:root {
+  --page: #f4f6f6; --surface: #fcfcfb; --ink: #0f1a1d; --ink-2: #4b585c; --muted: #7c8689; --rule: #dde2e3;
+  --accent: #1d6b73; --accent-soft: #e3f0f1;
+  --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b; --neutral: #a9b3b6;
+  --series-1: #2a78d6; --grid: #e1e0d9; --axis: #c3c2b7; --band: rgba(250,178,25,.16);
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --good: #37b437; --warn: #f0b43c; --serious: #ec835a; --crit: #e4625f; --neutral: #6b7477; --series-1: #3987e5; --grid: #2c2c2a; --axis: #383835; --band: rgba(240,180,60,.13); color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0f1416; --surface: #1a1a19; --ink: #f2f4f4; --ink-2: #c3c9cb; --muted: #8d979a; --rule: #2e3739; --accent: #6cc0c8; --accent-soft: #16292c; --good: #37b437; --warn: #f0b43c; --serious: #ec835a; --crit: #e4625f; --neutral: #6b7477; --series-1: #3987e5; --grid: #2c2c2a; --axis: #383835; --band: rgba(240,180,60,.13); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font: 15px/1.6 var(--font-body); margin: 0; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 40px; }
+section { display: grid; gap: 14px; min-width: 0; }
+h1 { font: 600 2.3rem/1.1 var(--font-head); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.45rem/1.2 var(--font-head); margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.3 var(--font-head); margin: 0; }
+p { margin: 0; max-width: 74ch; }
+.eyebrow { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.meta { font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.lede { font-size: 1.1rem; line-height: 1.55; color: var(--ink-2); max-width: 72ch; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .88em; }
+header { display: grid; gap: 12px; }
+.verdict { background: var(--accent-soft); border: 1px solid var(--rule); border-left: 4px solid var(--accent); padding: 18px 22px; display: grid; gap: 12px; }
+.verdict p { max-width: 84ch; }
+.verdict ol { margin: 0; padding-left: 1.3em; display: grid; gap: 9px; max-width: 86ch; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.tile .n { font: 600 1.75rem/1.1 var(--font-head); }
+.tile .l { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+.fig { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 10px; margin: 0; min-width: 0; overflow-x: auto; }
+.fig svg { width: 100%; min-width: 620px; height: auto; display: block; overflow: visible; }
+.fig figcaption { font: 12.5px/1.5 var(--font-mono); color: var(--muted); }
+.fig .t { font: 600 1rem/1.3 var(--font-head); color: var(--ink); }
+svg text { font-family: var(--font-mono); font-size: 12px; fill: var(--ink-2); }
+svg .lab { fill: var(--ink); }
+svg .sub { fill: var(--muted); font-size: 11px; }
+svg .grid { stroke: var(--grid); stroke-width: 1; }
+svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .hit { fill: transparent; cursor: default; }
+svg .hit:focus { outline: none; }
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 500 11.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--page); }
+tr:last-child td { border-bottom: 0; }
+td .num { font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-mono); padding: 4px 8px; border: 1px solid var(--rule); border-radius: 999px; white-space: nowrap; background: var(--page); color: var(--ink); }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--neutral)); }
+.c-good { --c: var(--good); } .c-warn { --c: var(--warn); } .c-crit { --c: var(--crit); } .c-ser { --c: var(--serious); } .c-acc { --c: var(--accent); } .c-neu { --c: var(--neutral); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.chain { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.chain li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0 14px; position: relative; padding-bottom: 14px; }
+.chain li::before { content: ""; position: absolute; left: 21px; top: 40px; bottom: 0; width: 2px; background: var(--rule); }
+.chain li:last-child::before { display: none; }
+.chain .k { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 600 1rem/1 var(--font-head); background: var(--surface); border: 2px solid var(--c, var(--neutral)); color: var(--ink); }
+.chain .body { background: var(--surface); border: 1px solid var(--rule); padding: 12px 16px; display: grid; gap: 6px; min-width: 0; }
+.chain .head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.chain .head strong { font: 600 1.02rem/1.3 var(--font-head); }
+.chain .body p { font-size: 14px; color: var(--ink-2); max-width: none; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul, .box ol { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; font-size: 14px; }
+.box.good { border-left: 4px solid var(--good); }
+.box.bad { border-left: 4px solid var(--crit); }
+.box.acc { border-left: 4px solid var(--accent); }
+.note { font: 12.5px/1.5 var(--font-mono); color: var(--muted); }
+.retract { border: 1px solid var(--rule); border-left: 4px solid var(--crit); background: var(--surface); padding: 14px 18px; display: grid; gap: 6px; }
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: 8px 10px; font: 12.5px/1.45 var(--font-body); max-width: 300px; display: none; }
+#tip b { display: block; font: 600 13.5px/1.3 var(--font-body); }
+@media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .two { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } h1 { font-size: 1.85rem; } .tiles { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Expromo EPS power sequencer · independent re-analysis</div>
+  <h1>EPS: what the evidence supports, and what it doesn't</h1>
+  <p class="lede">A desk review of the whole investigation: every document, the raw test logs, the bench scripts, the photos and the v3.3 firmware source. Every claim was traced back to its data. No hardware was connected and no new measurements were made. Where earlier conclusions, including today's, don't survive that check, this page says so.</p>
+  <p class="meta">2026-10-28 · Expromo Product Department · Sources: the private EPS repo (docs/, data/, tools/, photos/, the firmware) and the bench scripts of the supply study · Grades: <span class="chip c-good">Measured</span> <span class="chip c-crit">Contradicted by data</span> <span class="chip c-warn">Untested / unsupported</span> <span class="chip c-neu">Unknown</span> <span class="chip c-acc">Judgement</span></p>
+</header>
+
+<section aria-labelledby="h-exec">
+  <h2 id="h-exec">Executive summary</h2>
+  <div class="verdict">
+    <p><strong>The current theory</strong> is a chain: switching 30–40 LED supplies per output → a few-millisecond mains dip → the COBI S-10-10 10 V supply sags → the 10 V comes back slowly → the W5500 hangs until power is removed → the field failure. <strong>Only two of those six links are established.</strong> The bench found a real, reproducible hardware weakness. Nobody has shown that the field produces it.</p>
+    <ol>
+      <li><strong>The field failure has never been observed with an instrument.</strong> No failed unit has been examined in its failed state. The failure rate is unknown. The one customer report that was followed up turned out to be a different firmware (v1.9.1, 10-channel). <span class="chip c-neu">Unknown</span></li>
+      <li><strong>The bench reproduced a real fault on one board.</strong> On the pilot box FriseH, a slow power-up ramp left the W5500 dead until power was removed in <strong>26 of 26</strong> trials, against <strong>0 of 17</strong> after a fast switch-on (exact p ≈ 2×10⁻¹²). Reset signals neither cleared it nor prevented it. <span class="chip c-good">Measured</span> It was one board on one lab supply, and the voltage waveforms were never measured.</li>
+      <li><strong>Two numbers behind "a few milliseconds is enough" don't survive the raw data.</strong> First, the "100 ms ramp" was 20 verified Modbus writes, and its real length was never recorded. Second, the two "deaf after a running dip" results came from a script that declared a box dead 4 s after the dip. v3.3 needs about 9–11 s to answer after any reboot. With a 10 s wait, 9 of 9 dips just rebooted cleanly. <span class="chip c-crit">Contradicted by data</span></li>
+      <li><strong>The report's "the supply holds the board about 0.9 s after a mains cut" contradicts its own log.</strong> Every cut from 0.22 s to 10 s gave the same ~5.6 s time-to-answer, which is a full reboot. So the real hold-up is under 0.22 s, and nothing shorter was ever measured. The same log shows <strong>18 of 18</strong> real COBI restarts came back by themselves (on unit 3, not FriseH). <span class="chip c-crit">Contradicted by data</span></li>
+      <li><strong>A few-ms mains dip sagging the 10 V has never been tested.</strong> An SMPS running at about 20–30 % load normally rides through a sub-cycle dip. That is an engineering expectation, not a measurement. <span class="chip c-warn">Untested</span></li>
+      <li><strong>Firmware: keep v3.3, retire v2.2.</strong> v3.3 removes real, measured v2.2 defects. It can't fix a W5500 that needs its power removed. On every reboot it switches all six outputs off, and they stay off unless "restore after reboot" is enabled (the default is off). <span class="chip c-good">Measured</span> <span class="chip c-good">Code-read</span></li>
+      <li><strong>Hardware platform:</strong> the Keyestudio KS0304 has no published schematic. Its W5500 reset and power can't be controlled, the flash is 99.5 % used, and connections are hand-wired into headers. It can't be qualified to "does its task perfectly". Keep it for the installed base; don't base new production on it. <span class="chip c-acc">Judgement</span></li>
+    </ol>
+    <p><strong>Bottom line.</strong> The supply theory is <em>not dead</em>, but it is not established either, and hardware development on top of it is premature. The two cheapest decisive experiments haven't been run:</p>
+    <ul style="margin:0;padding-left:1.15em;display:grid;gap:6px;max-width:86ch">
+      <li>Power the susceptible board (FriseH) from its own COBI supply through the Netio, and switch the mains 50–100 times.</li>
+      <li>Capture the 10 V of a loaded box when its walls switch on.</li>
+    </ul>
+    <p>Until then, field behaviour should be <em>observed</em> before anyone power-cycles a dead box.</p>
+  </div>
+  <div class="tiles">
+    <div class="tile"><div class="n">0</div><div class="l">failed field units ever examined in their failed state</div></div>
+    <div class="tile"><div class="n">26/26 vs 0/17</div><div class="l">slow ramp vs fast switch-on, FriseH only: a real board-level fault</div></div>
+    <div class="tile"><div class="n">&lt; 0.22 s</div><div class="l">real hold-up of the box after a mains cut. The report said ~0.9 s; its own log says otherwise</div></div>
+    <div class="tile"><div class="n">≥ 2.1</div><div class="l">failures per box per month the site needs before a 2-week, 3-box pilot has a 95 % chance of seeing even one</div></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-chain">
+  <h2 id="h-chain">The theory as a chain, one link at a time</h2>
+  <p>A causal chain is only as strong as its weakest link. Each link below is graded on what has actually been measured. Notes on the evidence follow each one.</p>
+  <ol class="chain">
+    <li style="--c:var(--good)"><span class="k">1</span><div class="body"><div class="head"><strong>Each output switches 30–40 LED supplies (zero-cross SSRs)</strong><span class="chip c-good">Fact</span></div><p>This is the installation design: KANE KSSR-14840DA SSRs on A0–A5. The six outputs are <em>sequenced</em>, not simultaneous: OUT1 at 1.03 s, then one every ~0.3 s, all on at 2.52 s (report §5.4). So at any moment only one SSR's bank is starting up.</p></div></li>
+    <li style="--c:var(--warn)"><span class="k">2</span><div class="body"><div class="head"><strong>That inrush dips the mains on the shared phase for a few ms</strong><span class="chip c-warn">Plausible, never measured</span></div><p>It is physically reasonable. Capacitor-input supplies draw a large charging current at switch-on, and zero-cross turn-on limits but doesn't remove it. The depth and length of the dip on site are unknown.</p></div></li>
+    <li style="--c:var(--crit)"><span class="k">3</span><div class="body"><div class="head"><strong>The dip makes the COBI S-10-10's 10 V output sag</strong><span class="chip c-warn">Untested</span> <span class="chip c-crit">Supporting figure contradicted</span></div><p>Nothing shorter than a 0.22 s mains cut was ever tested, and the "0.9 s hold-up" figure is wrong (see below). The supply is a 10 W unit running at roughly 2–3 W. Converters at that load normally carry their output through a sub-cycle interruption: 0.5–1 cycle dips are the standard immunity test for CE-marked equipment (EN 61000-4-11). That is an expectation, not a measurement of this unit.</p></div></li>
+    <li style="--c:var(--warn)"><span class="k">4</span><div class="body"><div class="head"><strong>After the sag, the 10 V rises back slowly</strong><span class="chip c-warn">Untested</span></div><p>This link is what the fault needs. The bench shows a fast recovery only reboots the box, and that comes back by itself (9/9). In 18 real restarts of the COBI on unit 3 the box always came back, but that board was never shown to be susceptible.</p></div></li>
+    <li style="--c:var(--good)"><span class="k">5</span><div class="body"><div class="head"><strong>A slow rise leaves the W5500 dead until its power is removed</strong><span class="chip c-good">Measured, one board</span></div><p>FriseH, slow staircase ramps from an RD6006: 26/26 dead. Board current while dead was 0.047–0.077 A against 0.18–0.20 A healthy, so the Ethernet chip isn't running. A reset pulse didn't recover it and holding reset through the ramp didn't prevent it. Removing power fixed it every time. Other boards were never ramp-tested.</p></div></li>
+    <li style="--c:var(--neutral)"><span class="k">6</span><div class="body"><div class="head"><strong>This is what customers experience</strong><span class="chip c-neu">Unknown</span></div><p>The field symptom is reported as "no ping, no web, no TCP until power-cycled". At least five bench mechanisms give that same symptom (below). Nobody has recorded the RJ45 link LED, the RGB colour, whether the walls stayed lit, or the switch-port state on a dead unit. Those four observations would separate the mechanisms.</p></div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-bench">
+  <h2 id="h-bench">What the bench actually shows</h2>
+  <figure class="fig" id="fig-outcomes">
+    <div class="t">Share of trials that ended with the network dead (point and exact 95 % interval)</div>
+    <svg viewBox="0 0 770 300" role="img" aria-labelledby="fo-d">
+      <desc id="fo-d">Dot plot. Slow staircase power-up ramp on FriseH: 26 of 26 dead. Fast switch-on: 0 of 17. Fast or short dips judged after 10 seconds: 0 of 9. Real COBI supply mains cuts on unit 3: 0 of 18. Running dips judged after only 4 seconds: 2 of 4, an unreliable method.</desc>
+      <g class="gridlines">
+        <line class="grid" x1="330" y1="18" x2="330" y2="262"/><line class="grid" x1="420" y1="18" x2="420" y2="262"/><line class="grid" x1="510" y1="18" x2="510" y2="262"/><line class="grid" x1="600" y1="18" x2="600" y2="262"/><line class="grid" x1="690" y1="18" x2="690" y2="262"/>
+      </g>
+      <line class="axis" x1="330" y1="262" x2="690" y2="262"/>
+      <g text-anchor="middle"><text x="330" y="280">0 %</text><text x="420" y="280">25 %</text><text x="510" y="280">50 %</text><text x="600" y="280">75 %</text><text x="690" y="280">100 %</text></g>
+      <g text-anchor="end">
+        <text class="lab" x="316" y="38">Slow power-up ramp</text><text class="sub" x="316" y="53">FriseH · RD6006 staircase, 0.2–12 s</text>
+        <text class="lab" x="316" y="88">Fast switch-on to 10 V</text><text class="sub" x="316" y="103">FriseH · RD6006 output enable</text>
+        <text class="lab" x="316" y="138">Dip, then fast recovery</text><text class="sub" x="316" y="153">FriseH · judged after ≥ 10 s</text>
+        <text class="lab" x="316" y="188">Real COBI, mains cut</text><text class="sub" x="316" y="203">unit 3 · 0.22–10 s cuts · v2.2</text>
+        <text class="lab" x="316" y="238">Dip, judged after 4 s</text><text class="sub" x="316" y="253">method flaw, see next section</text>
+      </g>
+      <g stroke="var(--series-1)" stroke-width="2" stroke-linecap="round">
+        <line x1="642.5" y1="42" x2="690" y2="42"/><line x1="642.5" y1="37" x2="642.5" y2="47"/>
+        <line x1="330" y1="92" x2="400.2" y2="92"/><line x1="400.2" y1="87" x2="400.2" y2="97"/>
+        <line x1="330" y1="142" x2="451" y2="142"/><line x1="451" y1="137" x2="451" y2="147"/>
+        <line x1="330" y1="192" x2="396.6" y2="192"/><line x1="396.6" y1="187" x2="396.6" y2="197"/>
+      </g>
+      <g stroke="var(--neutral)" stroke-width="2" stroke-linecap="round">
+        <line x1="354.5" y1="242" x2="665.5" y2="242"/><line x1="354.5" y1="237" x2="354.5" y2="247"/><line x1="665.5" y1="237" x2="665.5" y2="247"/>
+      </g>
+      <g stroke="var(--surface)" stroke-width="2">
+        <circle cx="690" cy="42" r="6" fill="var(--series-1)"/>
+        <circle cx="330" cy="92" r="6" fill="var(--series-1)"/>
+        <circle cx="330" cy="142" r="6" fill="var(--series-1)"/>
+        <circle cx="330" cy="192" r="6" fill="var(--series-1)"/>
+        <circle cx="510" cy="242" r="6" fill="var(--neutral)"/>
+      </g>
+      <g><text class="lab" x="704" y="46">26/26</text><text class="lab" x="704" y="96">0/17</text><text class="lab" x="704" y="146">0/9</text><text class="lab" x="704" y="196">0/18</text><text x="704" y="246">2/4</text></g>
+      <g>
+        <rect class="hit" x="0" y="22" width="770" height="40" data-tip="Slow power-up ramp (FriseH)|26 of 26 dead · 95 % CI 87–100 %. Protocol A 10, discriminator 3, '100 ms' 5, RESET held 2, cap fitted 3, v3.3.1 gate 3." tabindex="0"/>
+        <rect class="hit" x="0" y="72" width="770" height="40" data-tip="Fast switch-on (FriseH)|0 of 17 dead · 95 % CI 0–20 %. Ramp sweep 8, discriminator 3, v3.3.1 3, cap test 3." tabindex="0"/>
+        <rect class="hit" x="0" y="122" width="770" height="40" data-tip="Dip, fast recovery, judged ≥ 10 s|0 of 9 dead (all clean reboots) · 95 % CI 0–34 %. fast_dip 5, Test 0 dips 2 + 2 (cap A/B)." tabindex="0"/>
+        <rect class="hit" x="0" y="172" width="770" height="40" data-tip="Real COBI supply, mains cut (unit 3)|0 of 18 unresponsive · 95 % CI 0–19 %. Every cut, even 0.22 s, rebooted the box (5.6 s to answer)." tabindex="0"/>
+        <rect class="hit" x="0" y="222" width="770" height="40" data-tip="Dip, judged after 4 s (27 Oct)|2 of 4 called 'deaf', then power-cycled at once. v3.3 needs ~9–11 s to answer after a reboot; not a valid classification." tabindex="0"/>
+      </g>
+    </svg>
+    <figcaption>Sources: <code>data/ramprate/…/results.txt</code>, <code>docs/bench-psu.md</code>, <code>data/m4250/events.csv</code>. Intervals are exact (Clopper–Pearson). Rows 1–3 are all on one board (FriseH), row 4 on another (unit 3). Different boards are known to differ: deaf start-ups were 4/536 on unit 2 and 0/800 on unit 1 (report §5.12).</figcaption>
+  </figure>
+  <div class="two">
+    <div class="box good"><h3>Established</h3><ul>
+      <li>On FriseH a <strong>slow</strong> rising supply reliably leaves the W5500 not running (low current, no network), and only removing power clears it.</li>
+      <li>A reset pulse doesn't clear it (Test 0a). Holding the board reset through the ramp doesn't prevent it (Test 0b, ×2). The 22 µF capacitor makes no difference on multi-second ramps. A firmware wait for a good rail makes no difference.</li>
+      <li>A dip followed by a <strong>fast</strong> recovery produces a clean reboot, not a hang.</li>
+    </ul></div>
+    <div class="box bad"><h3>Not established</h3><ul>
+      <li>The ramp speed at which the fault starts. Only "RD6006 switch-on" (never measured, assumed ≲ 20 ms) and staircases of roughly 0.2 s and longer were tested.</li>
+      <li>Whether other boards behave like FriseH.</li>
+      <li>Whether any real supply in the field rises slowly enough. FriseH itself has never been run from its own COBI supply.</li>
+      <li>What is physically stuck inside the W5500: the clock, the internal 1.2 V core regulator, or a reset path. Board current says "chip not running", not why.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-method">
+  <h2 id="h-method">Method errors and data corrections</h2>
+
+  <h3>1 · "Deaf after a running dip" was a waiting-time artefact</h3>
+  <p>The 27 Oct script <code>runsag.py</code> restored 10 V, waited 4 s, and asked the box once (1 s timeout). With no answer it logged "DEAF (needs power cycle)" and power-cycled it straight away. So the box never had a chance to show whether it would come back. After any reboot, v3.3 answers only after ~9–11 s: it probes its address (RFC 5227) and negotiates the link twice. v2.2 answers after 2–3 s, so a 4 s window was valid for v2.2 but not for v3.3. The next day <code>fast_dip.py</code> checked at 4 s and again at 10 s, and every dip turned out to be a clean reboot. Its <code>UPTIME</code> was ~11 s at the first answer.</p>
+  <figure class="fig">
+    <div class="t">Seconds after the supply is restored</div>
+    <svg viewBox="0 0 770 220" role="img" aria-labelledby="ft-d">
+      <desc id="ft-d">Timeline from 0 to 14 seconds. v2.2 answers after a reboot at about 2.2 to 2.9 seconds. v3.3 answers at about 9 to 11 seconds. The 27 October script judged once at 4 seconds and called the box dead. The 28 October script judged at 4 and 10 seconds and found a clean reboot.</desc>
+      <g><line class="grid" x1="230" y1="14" x2="230" y2="182"/><line class="grid" x1="300" y1="14" x2="300" y2="182"/><line class="grid" x1="370" y1="14" x2="370" y2="182"/><line class="grid" x1="440" y1="14" x2="440" y2="182"/><line class="grid" x1="510" y1="14" x2="510" y2="182"/><line class="grid" x1="580" y1="14" x2="580" y2="182"/><line class="grid" x1="650" y1="14" x2="650" y2="182"/><line class="grid" x1="720" y1="14" x2="720" y2="182"/></g>
+      <line class="axis" x1="230" y1="182" x2="720" y2="182"/>
+      <g text-anchor="middle"><text x="230" y="200">0</text><text x="300" y="200">2</text><text x="370" y="200">4</text><text x="440" y="200">6</text><text x="510" y="200">8</text><text x="580" y="200">10</text><text x="650" y="200">12</text><text x="720" y="200">14 s</text></g>
+      <g text-anchor="end">
+        <text class="lab" x="216" y="38">v2.2 answers again</text>
+        <text class="lab" x="216" y="80">v3.3 answers again</text>
+        <text class="lab" x="216" y="122">runsag.py · 27 Oct</text>
+        <text class="lab" x="216" y="164">fast_dip.py · 28 Oct</text>
+      </g>
+      <rect x="307" y="26" width="24.5" height="18" rx="4" fill="var(--neutral)"/>
+      <rect x="552" y="68" width="63" height="18" rx="4" fill="var(--series-1)"/>
+      <text x="340" y="40">2.2–2.9 s (report §5.12, §5.24)</text>
+      <text x="624" y="82">~9–11 s</text>
+      <line x1="370" y1="108" x2="370" y2="132" stroke="var(--crit)" stroke-width="2"/>
+      <circle cx="370" cy="120" r="5" fill="var(--crit)" stroke="var(--surface)" stroke-width="2"/>
+      <text x="382" y="124">single check → "DEAF", power-cycled at once</text>
+      <line x1="370" y1="150" x2="370" y2="174" stroke="var(--good)" stroke-width="2"/><line x1="580" y1="150" x2="580" y2="174" stroke="var(--good)" stroke-width="2"/>
+      <circle cx="370" cy="162" r="5" fill="var(--good)" stroke="var(--surface)" stroke-width="2"/><circle cx="580" cy="162" r="5" fill="var(--good)" stroke="var(--surface)" stroke-width="2"/>
+      <text x="592" y="166">→ clean reboot, 9/9</text>
+      <rect class="hit" x="0" y="22" width="770" height="30" data-tip="v2.2 after a reboot|Answers in ~2.2–2.9 s (USB-reset start-ups, report §5.12 / §5.24)." tabindex="0"/>
+      <rect class="hit" x="0" y="64" width="770" height="30" data-tip="v3.3 after a reboot|Median 9.16 s (50 USB-reset start-ups, report §5.26); UPTIME ≈ 11 s at first answer after a dip (bench-psu)." tabindex="0"/>
+      <rect class="hit" x="0" y="106" width="770" height="30" data-tip="runsag.py (27 Oct)|One NET_STATUS query 4 s after restore; no answer → logged DEAF and power-cycled immediately." tabindex="0"/>
+      <rect class="hit" x="0" y="148" width="770" height="30" data-tip="fast_dip.py (28 Oct)|Checked at 4 s and again 6 s later; every dip was a clean reboot that self-recovered." tabindex="0"/>
+    </svg>
+    <figcaption>The 27 Oct dips may have been real hangs, but the method can't tell a hang from a box still booting, and the power cycle wiped the evidence. The repo explained the flip as "a different dip profile". That was never tested; the waiting time explains it without any extra assumption.</figcaption>
+  </figure>
+
+  <h3>2 · The "100 ms" ramp wasn't 100 ms</h3>
+  <p><code>ramprate_test.py</code> builds a ramp from 20 calls to <code>set_voltage()</code> with <code>sleep(0.1/20)</code> between them. Each call is a Modbus write <em>plus</em> a verifying read over a CH340 USB-serial adapter, so 40 round-trips set the real length, not the 5 ms sleeps. The duration was never logged. It is almost certainly well above 100 ms; an estimate is 0.2–2 s. The page's claim that "a 100 ms rise is already too slow" therefore has no basis. That matters because real power supplies typically rise in tens of milliseconds, which is exactly the range that was never tested.</p>
+  <figure class="fig">
+    <div class="t">Rise times tested on the bench vs. what real supplies do (log scale)</div>
+    <svg viewBox="0 0 770 300" role="img" aria-labelledby="fr-d">
+      <desc id="fr-d">Log time axis from 1 millisecond to 20 seconds. Fast switch-on from the lab supply, assumed under 20 milliseconds and never measured: 17 of 17 came up. The ramp labelled 100 milliseconds, estimated 0.2 to 2 seconds: 0 of 5. Staircases of about 4, 6 and 12 seconds: all dead. Datasheet rise times of comparable DIN-rail supplies are 50 and 80 milliseconds, inside a band from 20 to 200 milliseconds that was never tested. The COBI S-10-10 rise time is not published.</desc>
+      <rect x="395.2" y="14" width="111.6" height="236" fill="var(--band)"/>
+      <text x="451" y="30" text-anchor="middle" class="lab">never tested</text>
+      <g><line class="grid" x1="250" y1="14" x2="250" y2="250"/><line class="grid" x1="361.6" y1="14" x2="361.6" y2="250"/><line class="grid" x1="473.2" y1="14" x2="473.2" y2="250"/><line class="grid" x1="584.8" y1="14" x2="584.8" y2="250"/><line class="grid" x1="696.4" y1="14" x2="696.4" y2="250"/></g>
+      <line class="axis" x1="250" y1="250" x2="730" y2="250"/>
+      <g text-anchor="middle"><text x="250" y="268">1 ms</text><text x="361.6" y="268">10 ms</text><text x="473.2" y="268">100 ms</text><text x="584.8" y="268">1 s</text><text x="696.4" y="268">10 s</text></g>
+      <g text-anchor="end">
+        <text class="lab" x="236" y="56">Fast switch-on</text><text class="sub" x="236" y="70">not measured</text>
+        <text class="lab" x="236" y="100">"100 ms" ramp</text><text class="sub" x="236" y="114">length not recorded</text>
+        <text class="lab" x="236" y="144">Staircase ~4 s</text>
+        <text class="lab" x="236" y="174">Staircase ~6 s</text>
+        <text class="lab" x="236" y="204">Staircase ~12 s</text>
+        <text class="lab" x="236" y="236">Real DIN supplies</text>
+      </g>
+      <rect x="250" y="48" width="145.2" height="16" rx="4" fill="none" stroke="var(--good)" stroke-width="2"/>
+      <text x="262" y="86">assumed ≲ 20 ms · 17/17 up</text>
+      <rect x="506.8" y="92" width="111.6" height="16" rx="4" fill="var(--crit)" opacity=".85"/>
+      <line x1="473.2" y1="88" x2="473.2" y2="112" stroke="var(--ink-2)" stroke-width="2"/>
+      <text x="628" y="105">est. 0.2–2 s · 0/5</text>
+      <g stroke="var(--surface)" stroke-width="2" fill="var(--crit)"><circle cx="652" cy="140" r="6"/><circle cx="671.6" cy="170" r="6"/><circle cx="705.2" cy="200" r="6"/></g>
+      <text x="560" y="144" text-anchor="end">0/10 up</text><text x="580" y="174" text-anchor="end">0/3 up</text><text x="612" y="204" text-anchor="end">dead (Test 0)</text>
+      <g stroke="var(--surface)" stroke-width="2" fill="var(--series-1)"><circle cx="439.6" cy="232" r="6"/><circle cx="462.4" cy="232" r="6"/></g>
+      <text x="480" y="236">50 / 80 ms (Mean Well, full load)</text>
+      <rect class="hit" x="0" y="44" width="770" height="30" data-tip="Fast switch-on|RD6006 output enable at 10 V. Its edge was never measured; the repo assumes ~10 ms. 17/17 came up." tabindex="0"/>
+      <rect class="hit" x="0" y="86" width="770" height="30" data-tip="'100 ms' ramp|20 verified Modbus writes (40 round-trips). The label marks 100 ms; the real length was not logged. 0/5 came up." tabindex="0"/>
+      <rect class="hit" x="0" y="128" width="770" height="90" data-tip="Slow staircases|~4 s (Protocol A, 0/10), ~6 s (discriminator, 0/3), ~12 s (Test 0): all dead." tabindex="0"/>
+      <rect class="hit" x="0" y="220" width="770" height="26" data-tip="Real supplies|Mean Well HDR-30-12: 50 ms, HDR-15-12: 80 ms rise at full load (datasheets). COBI S-10-10: no figure published." tabindex="0"/>
+    </svg>
+    <figcaption>Red marks are deaf outcomes, the green outline is a clean outcome. The shaded band (20–200 ms) holds the typical rise of real switch-mode supplies and has no data at all. Whether the COBI's own power-up falls inside the danger zone is unknown. The fact that the 22 µF capacitor was originally fitted "because the 10 V supply didn't restart the board reliably" hints that it might.</figcaption>
+  </figure>
+
+  <h3>3 · The real supply does <em>not</em> hold the board 0.9 s</h3>
+  <p>Report §5.15 states "the real box's supply holds the board ~0.9 s after a mains cut." The raw log <code>data/m4250/events.csv</code> says otherwise. Every cut, from 0.22 s to 10 s, was followed by the same ~5.6 s wait before the box answered. That equals a reboot plus the switch's ~3 s forwarding delay. Events that don't reboot the box (output switching, port flaps) answered within 0.8 s. So the box rebooted even on the shortest cut tested: real hold-up is under 0.22 s, and shorter cuts were never tried.</p>
+  <figure class="fig">
+    <div class="t">Seconds until the box answered, by mains-cut length (unit 3, real COBI supply, v2.2)</div>
+    <svg viewBox="0 0 770 270" role="img" aria-labelledby="fm-d">
+      <desc id="fm-d">Scatter. Mains cuts of 0.22, 0.53, 0.92, 1.53, 3.05 and 10 seconds, three each. Time to answer is 5.6 seconds for almost all, up to 7.25 seconds. Events that do not reboot answer within 0.8 seconds. The report claimed a 0.9 second hold-up, which would have made the short cuts answer at once.</desc>
+      <g><line class="grid" x1="90" y1="230" x2="720" y2="230"/><line class="grid" x1="90" y1="180" x2="720" y2="180"/><line class="grid" x1="90" y1="130" x2="720" y2="130"/><line class="grid" x1="90" y1="80" x2="720" y2="80"/><line class="grid" x1="90" y1="30" x2="720" y2="30"/></g>
+      <line class="axis" x1="90" y1="230" x2="720" y2="230"/>
+      <g text-anchor="end"><text x="80" y="234">0 s</text><text x="80" y="184">2</text><text x="80" y="134">4</text><text x="80" y="84">6</text><text x="80" y="34">8</text></g>
+      <g text-anchor="middle"><text x="90" y="250">0.1 s</text><text x="220.6" y="250">0.3</text><text x="363.8" y="250">1</text><text x="494.4" y="250">3</text><text x="637.6" y="250">10 s cut</text></g>
+      <line x1="90" y1="210" x2="720" y2="210" stroke="var(--good)" stroke-width="2"/>
+      <text x="96" y="204">no reboot: output switching / port flaps answered ≤ 0.8 s</text>
+      <line x1="351.3" y1="30" x2="351.3" y2="230" stroke="var(--crit)" stroke-width="1.5"/>
+      <text x="358" y="164">report: "holds ~0.9 s"</text>
+      <g fill="var(--series-1)" stroke="var(--surface)" stroke-width="2">
+        <circle cx="177.7" cy="89.5" r="5"/><circle cx="183.7" cy="89" r="5"/><circle cx="189.7" cy="89" r="5"/>
+        <circle cx="282.3" cy="88.5" r="5"/><circle cx="288.3" cy="89" r="5"/><circle cx="294.3" cy="88.5" r="5"/>
+        <circle cx="347.9" cy="88.3" r="5"/><circle cx="353.9" cy="89" r="5"/><circle cx="359.9" cy="89" r="5"/>
+        <circle cx="408.4" cy="89" r="5"/><circle cx="414.4" cy="89" r="5"/><circle cx="420.4" cy="89" r="5"/>
+        <circle cx="490.4" cy="89" r="5"/><circle cx="496.4" cy="48.8" r="5"/><circle cx="502.4" cy="61.3" r="5"/>
+        <circle cx="631.6" cy="61.8" r="5"/><circle cx="637.6" cy="89" r="5"/><circle cx="643.6" cy="89" r="5"/>
+      </g>
+      <text x="372" y="116">≈ 5.6 s every time = reboot + switch delay</text>
+      <rect class="hit" x="160" y="60" width="50" height="60" data-tip="0.22 s cut ×3|5.62 / 5.64 / 5.64 s to answer: rebooted." tabindex="0"/>
+      <rect class="hit" x="263" y="60" width="50" height="60" data-tip="0.53 s cut ×3|5.66 / 5.64 / 5.66 s: rebooted." tabindex="0"/>
+      <rect class="hit" x="329" y="60" width="50" height="60" data-tip="0.92 s cut ×3|5.67 / 5.64 / 5.64 s: rebooted." tabindex="0"/>
+      <rect class="hit" x="389" y="60" width="50" height="60" data-tip="1.53 s cut ×3|5.64 s each: rebooted." tabindex="0"/>
+      <rect class="hit" x="471" y="30" width="50" height="90" data-tip="3.05 s cut ×3|5.64 / 7.25 / 6.75 s: rebooted." tabindex="0"/>
+      <rect class="hit" x="612" y="40" width="50" height="80" data-tip="10 s cut ×3|6.73 / 5.64 / 5.64 s: cold start; all 18 cuts came back by themselves." tabindex="0"/>
+    </svg>
+    <figcaption>Source: <code>data/m4250/events.csv</code>, rows P1 and P2 (2026-10-09, 12:50–12:59), clock started when power was restored (<code>tools/event_check.py</code>). Points are jittered sideways so the three trials per cut stay visible. This was unit 3 with the 22 µF capacitor fitted, on v2.2.</figcaption>
+  </figure>
+
+  <h3>4 · Other inconsistencies found in the record</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Item</th><th>What the record says</th><th>What the evidence says</th></tr></thead>
+    <tbody>
+      <tr><td>Board supply</td><td>"10 V DIN PSU (1.8 A)" (report §3.1, HANDOVER)</td><td>The photo label reads <strong>COBI electronic S-10-10, 10 VDC 1.0 A</strong>, 85–265 VAC in (10 W).</td></tr>
+      <tr><td>22 µF RESET capacitor on pilot boxes</td><td>"pilot units ship without it" (bench-psu) · "remove it to flash, then refit it" (pilot plan) · "a fixed design decision" (HANDOVER)</td><td>Three different statements. The capacitor also blocks USB flashing, which is how the pilot is being flashed.</td></tr>
+      <tr><td>Healthy board current</td><td>"≈ 0.11 A" (HANDOVER) and "≈ 0.18–0.20 A" (bench-psu)</td><td>Unresolved. It matters because the dead-state current (~0.05 A) is interpreted relative to it.</td></tr>
+      <tr><td>The "8 s off" observation</td><td>An ~8 s supply cut cleared the W5500 "without even resetting the ATmega" (UPTIME kept counting)</td><td>At ~50 mA, nothing on this board can keep the ATmega running for 8 s. Either the supply wasn't really off or the reading was wrong. Either way, the bench "power interruptions" are not characterised waveforms.</td></tr>
+      <tr><td>Bench scripts</td><td>Results in <code>docs/</code> and <code>data/</code></td><td>The scripts that produced the supply results (<code>ramprate_test.py</code>, <code>runsag.py</code>, <code>fast_dip.py</code>, …) exist only in a temporary session folder, not in the repo.</td></tr>
+      <tr><td>Public supply-sag page</td><td>"Root cause found", "only takes a dip of tens of milliseconds", "consistent with every result"</td><td>Not supported, for the reasons above. It needs a correction banner.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-fw">
+  <h2 id="h-fw">Firmware: what each failure does to the network and to the LED walls</h2>
+  <p>For a power sequencer, "doing its task perfectly" ranks two failures differently. <strong>Outputs changing without a command</strong> (walls going dark on a live show) is worse than <strong>losing control</strong> (walls stay as they are, but can't be commanded). The firmware source shows that every reboot forces all six outputs off (<code>setup()</code>). They come back only if D5 is grounded or "restore after reboot" is enabled, and that setting defaults to <strong>off</strong>.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Event</th><th>v2.2</th><th>v3.3</th><th>LED walls</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>W5500 register upset (settings lost, PHY down, …)</td><td>dead until power cycle</td><td>recovers in 3–10 s</td><td>unchanged</td><td><span class="chip c-good">Measured</span> 17-fault matrix</td></tr>
+      <tr><td>DHCP server down at renewal (DHCP sites)</td><td>reboots, can strand for good</td><td>recovers by itself</td><td>v2.2: <strong>off</strong> after its reboot (unless restore)</td><td><span class="chip c-good">Measured</span> one server</td></tr>
+      <tr><td>Idle or half-open connections</td><td>control port dead, ping OK</td><td>not affected</td><td>unchanged</td><td><span class="chip c-good">Measured</span></td></tr>
+      <tr><td>Deaf receiver after a link negotiation</td><td>persistence unknown</td><td>self-clears or PHY reset after ~6 min</td><td>unchanged</td><td><span class="chip c-good">Measured</span> rare</td></tr>
+      <tr><td>Supply dip with a fast recovery</td><td>clean reboot</td><td>clean reboot, answers after ~10 s</td><td><strong>off</strong> (restore default off) or re-sequenced in ~2.5 s</td><td><span class="chip c-good">Measured</span> FriseH</td></tr>
+      <tr><td>Slow supply rise</td><td>W5500 dead until power removed</td><td>the same; logs <code>W5500_NOT_RESPONDING</code>, LED red/yellow</td><td>CPU runs, outputs as commanded</td><td><span class="chip c-good">Measured</span> one board</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>A field clue nobody has collected:</strong> if dead boxes are found with their walls still lit, the CPU did not reboot, and any sag was too shallow to trip the 2.7 V brown-out. If walls had gone dark, customers would report blackouts, not just lost control. Recording what the walls and the status LED were doing is free and separates the hypotheses.</p>
+</section>
+
+<section aria-labelledby="h-fixes">
+  <h2 id="h-fixes">The proposed fixes, re-scored</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Option</th><th>Status</th><th>Assessment</th></tr></thead>
+    <tbody>
+      <tr><td>22 µF RESET capacitor</td><td><span class="chip c-good">Measured</span></td><td>No effect on multi-second ramps. On tens-of-ms ramps (the real-supply range) it is <em>untested</em> and may matter. It blocks USB flashing.</td></tr>
+      <tr><td>Reset supervisor on the board RESET line</td><td><span class="chip c-good">Ruled out</span></td><td>Test 0a and 0b: a reset neither recovers nor prevents the fault.</td></tr>
+      <tr><td>Firmware "wait for a good rail" (v3.3.1)</td><td><span class="chip c-good">Ruled out</span></td><td>0/3, no change.</td></tr>
+      <tr><td>UVLO load switch (in-house build)</td><td><span class="chip c-warn">Untested</span></td><td>It removes the slow-rise case by design, but it turns any deep sag into a reboot, which drops the outputs. It is hand-built electronics on a hobby board. It is justified only if link 4 is shown to happen.</td></tr>
+      <tr><td>Always-on 5 V on USB</td><td><span class="chip c-good">Measured</span> on bench</td><td>Zero-outage ride-through on FriseH. Set aside by decision on 28 Oct; listed only for completeness.</td></tr>
+      <tr><td>Mean Well HDR-30-12 instead of the COBI</td><td><span class="chip c-crit">Withdrawn</span></td><td>Recommended earlier today for ride-through of ms dips. That problem is unproven, and its 50 ms rise time (full load) sits in the untested band. See the retraction below.</td></tr>
+      <tr><td>12 V supercap DC-UPS (Bicker class)</td><td><span class="chip c-warn">Not justified</span></td><td>~€280, forces a 12 V bus, and solves an unproven problem.</td></tr>
+      <tr><td>Brown-out level 4.3 V (fuse)</td><td><span class="chip c-acc">Judgement</span></td><td>No parts. It keeps the CPU and EEPROM inside their spec (an ATmega at 16 MHz needs ≥ 4.5 V; today it can run down to 2.7 V). It doesn't fix the W5500. It needs an ISP programmer per box.</td></tr>
+      <tr><td>Matronics DIN voltage monitor</td><td><span class="chip c-crit">Disqualified</span></td><td>A self-powered relay with a 9 V floor, too slow for ms events.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="retract"><strong>Retraction (same author, earlier today).</strong> <p><code>docs/hardware-options.md</code> recommended swapping the COBI for a Mean Well HDR-30-12 as a cheap ride-through fix. That rested on the "few-ms dip sags the 10 V" link, which is untested, and on the 0.9 s hold-up figure, which the data contradicts. The recommendation is withdrawn. A supply swap should only be considered once the real COBI's power-up edge is measured and shown to be in the danger zone.</p></div>
+</section>
+
+<section aria-labelledby="h-pilot">
+  <h2 id="h-pilot">What the pilot can and can't show</h2>
+  <p>The pilot runs three loaded boxes for at least two weeks: 42 box-days. If no failure is seen, that is only informative if failures were frequent before. The site's v2.2 failure history is item P5 in the pilot plan and is still unanswered. The canary's injected fault (a W5500 soft reset) demonstrates recovery from a fault class that has never been tied to the field.</p>
+  <figure class="fig">
+    <div class="t">Chance that the pilot sees at least one failure, by the site's true failure rate</div>
+    <svg viewBox="0 0 770 270" role="img" aria-labelledby="fp-d">
+      <desc id="fp-d">Curve of the probability of observing at least one failure in 42 box-days against the true failure rate per box per month. At 0.5 per month the chance is 50 percent, at 1 per month 75 percent, and it reaches 95 percent at 2.1 per month.</desc>
+      <g><line class="grid" x1="80" y1="220" x2="700" y2="220"/><line class="grid" x1="80" y1="172.5" x2="700" y2="172.5"/><line class="grid" x1="80" y1="125" x2="700" y2="125"/><line class="grid" x1="80" y1="77.5" x2="700" y2="77.5"/><line class="grid" x1="80" y1="30" x2="700" y2="30"/></g>
+      <line class="axis" x1="80" y1="220" x2="700" y2="220"/>
+      <g text-anchor="end"><text x="70" y="224">0 %</text><text x="70" y="176.5">25 %</text><text x="70" y="129">50 %</text><text x="70" y="81.5">75 %</text><text x="70" y="34">100 %</text></g>
+      <g text-anchor="middle"><text x="80" y="240">0</text><text x="235" y="240">1</text><text x="390" y="240">2</text><text x="545" y="240">3</text><text x="700" y="240">4</text><text x="390" y="258">true failures per box per month</text></g>
+      <path d="M80.0,220.0 L95.5,195.2 L111.0,173.6 L126.5,154.8 L142.0,138.5 L157.5,124.4 L173.0,112.0 L188.5,101.3 L204.0,92.0 L219.5,83.9 L235.0,76.9 L250.5,70.7 L266.0,65.4 L281.5,60.8 L297.0,56.8 L312.5,53.3 L328.0,50.2 L343.5,47.6 L359.0,45.3 L374.5,43.3 L390.0,41.6 L405.5,40.0 L421.0,38.7 L436.5,37.6 L452.0,36.6 L467.5,35.7 L483.0,35.0 L498.5,34.3 L514.0,33.8 L529.5,33.3 L545.0,32.8 L560.5,32.5 L576.0,32.2 L591.5,31.9 L607.0,31.6 L622.5,31.4 L638.0,31.2 L653.5,31.1 L669.0,30.9 L684.5,30.8 L700.0,30.7" fill="none" stroke="var(--series-1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <g fill="var(--series-1)" stroke="var(--surface)" stroke-width="2"><circle cx="157.5" cy="124.4" r="5"/><circle cx="235" cy="76.9" r="5"/><circle cx="411.7" cy="39.5" r="5"/></g>
+      <text x="166" y="140">0.5/month → 50 %</text><text x="244" y="92">1/month → 75 %</text><text x="420" y="60">2.1/month → 95 %</text>
+      <rect class="hit" x="135" y="100" width="45" height="45" data-tip="0.5 failures per box-month|50 % chance the pilot sees one." tabindex="0"/>
+      <rect class="hit" x="212" y="55" width="45" height="45" data-tip="1 failure per box-month|75 % chance." tabindex="0"/>
+      <rect class="hit" x="389" y="18" width="45" height="45" data-tip="2.1 failures per box-month|95 % chance: below this, a clean pilot can't rule the fault out." tabindex="0"/>
+    </svg>
+    <figcaption>P = 1 − e<sup>−r·42/30</sup> (Poisson, 3 boxes × 14 days). With no failure seen, the one-sided 95 % upper bound on the rate is ≈ 3/42 per box-day, i.e. ~2.1 per box-month.</figcaption>
+  </figure>
+  <div class="two">
+    <div class="box acc"><h3>Make the pilot informative (zero cost)</h3><ol>
+      <li>Get the site's v2.2 history: how often, which boxes, when (after power-on? during a show? when the walls switch on?), DHCP or static.</li>
+      <li>Before anyone power-cycles a dead box, note: the RJ45 link/activity LEDs, the status LED colour, whether its walls are lit, and the switch port's link state and MAC entry. Take a photo. Afterwards, pull <code>NET_LOG</code>.</li>
+      <li>Make all four boxes identical in hardware (the 22 µF capacitor), or record exactly which ones differ.</li>
+    </ol></div>
+    <div class="box acc"><h3>Measure link 3 on site (low cost)</h3><ul>
+      <li>Put a meter with fast peak MIN capture (≈ 250 µs class) or a small USB scope on one loaded box's 10 V terminals. Run a POWER_ON and read the minimum.</li>
+      <li>If the 10 V doesn't move, the "few-ms dip" theory is refuted where it matters.</li>
+      <li>If it dips, the waveform shows its depth and the recovery speed: the two numbers any fix has to be sized for.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-alt">
+  <h2 id="h-alt">Alternatives the theory crowds out</h2>
+  <p>The same field symptom ("unreachable until power-cycled") has several candidate causes. Most were measured on the bench; none has been tied to a site.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Candidate</th><th>Evidence so far</th><th>Field discriminator</th></tr></thead>
+    <tbody>
+      <tr><td>Cold start of the COBI (mains-on), especially on boxes without the 22 µF capacitor</td><td>The capacitor was originally added because the box "didn't restart reliably". The real supply's rise has never been measured on a susceptible board.</td><td>Failures right after a site power-up; dead box with walls off and LED red</td></tr>
+      <tr><td>Fast transients (EFT/burst, surge, ESD) from load switching or long cables</td><td>Never tested. There is no record of EMC immunity testing of the assembled box.</td><td>Failures at switching moments without any measured 10 V dip</td></tr>
+      <tr><td>Deaf receiver after a link negotiation (mechanism c)</td><td>Measured: 4/536 on one board, twice on unit 3 under v3.3. Self-clearing so far.</td><td>Link LED on, switch sees the MAC, the unit sends but doesn't answer</td></tr>
+      <tr><td>DHCP strand (v2.2, DHCP sites)</td><td>Measured on one server type</td><td>Unit in DHCP mode; router or server restarted before the failure</td></tr>
+      <tr><td>Link-partner interoperability</td><td>Measured with one USB adapter (deaf at 100 Mbps)</td><td>Always the same port, switch or media converter</td></tr>
+      <tr><td>SD-card select on D4 (blue LED)</td><td>Code-read; still present in v3.3; no failure seen without a card</td><td>Failures mostly while the outputs are off (blue LED lit)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-ux">
+  <h2 id="h-ux">Product and user-experience findings</h2>
+  <div class="two">
+    <div class="box"><h3>For the operator and the integrator</h3><ul>
+      <li><strong>A reboot means dark walls.</strong> Outputs are off on every boot and stay off unless "restore after reboot" is on (the default is off). Whether the walls should come back by themselves after a power blip is a product decision. It hasn't been taken explicitly.</li>
+      <li><strong>Slower comeback on v3.3:</strong> ~9–11 s to answer after a reboot, against 2–3 s on v2.2 (address probing plus a second link negotiation). Control systems with short timeouts will see this.</li>
+      <li><strong>The status LED already tells "no network"</strong> (red with outputs off, yellow with all on), but operators aren't asked to report it.</li>
+      <li><strong>Recovery is physical:</strong> a dead box needs someone at the cabinet to cut its power.</li>
+    </ul></div>
+    <div class="box"><h3>For the technician and production</h3><ul>
+      <li><strong>Firmware update needs soldering</strong> when the 22 µF RESET capacitor is fitted: it blocks USB flashing and must be removed and refitted.</li>
+      <li><strong>Per-unit builds</strong> for the MAC address (<code>-DEPS_MAC_SUFFIX</code>): a process where one slip gives two boxes the same MAC. A duplicate MAC has already been seen on the bench (report §5.6).</li>
+      <li><strong>Factory reset</strong> means shorting D9 to GND for 10 s inside the box.</li>
+      <li><strong>Flash 99.5 % used</strong> (162 B free): every future fix costs a feature.</li>
+      <li><strong>Unverified (outside this review's scope):</strong> SSR thermal derating and capacitive-inrush rating for 30–40 supplies per channel; EMC/CE testing of the assembled box.</li>
+    </ul></div>
+  </div>
+  <div class="box good"><h3>What the investigation did well</h3><ul>
+    <li>It pre-registered protocols, used crossover designs, reported every failure (including its own firmware's), gave exact confidence intervals, and openly retracted earlier conclusions. That is what made this review possible.</li>
+    <li>The v3.x network layer was built against measured defects, a 17-fault injection matrix and a 56-item standards suite. On the bench it dominates v2.2.</li>
+    <li>v3.3 logs the supply voltage and a W5500 "not responding" event into an EEPROM log that survives power cuts, so the pilot will produce evidence.</li>
+  </ul></div>
+</section>
+
+<section aria-labelledby="h-verdicts">
+  <h2 id="h-verdicts">Verdicts</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Item</th><th>Verdict</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>"A few-ms mains dip is the root cause"</td><td><span class="chip c-crit">Stop calling it established</span></td><td>Links 2–4 and 6 are untested, and two supporting figures are contradicted by the raw data. Relabel it as a hypothesis on the public pages.</td></tr>
+      <tr><td>Firmware v2.2</td><td><span class="chip c-crit">Retire</span></td><td>Measured defects: socket starvation, DHCP strand, library register bug, one byte per TCP segment.</td></tr>
+      <tr><td>Firmware v3.3</td><td><span class="chip c-good">Keep; freeze features</span></td><td>Better on every bench measure. Flash is full, so only fixes from now on.</td></tr>
+      <tr><td>Hardware development (UVLO etc.)</td><td><span class="chip c-warn">Pause</span></td><td>Don't build a fix for a link that hasn't been shown to exist. Resume when the real-supply test or the site measurement shows a slow edge.</td></tr>
+      <tr><td>KS0304 board as the product platform</td><td><span class="chip c-acc">Not for new production</span></td><td>No schematic, no W5500 reset or power control, out-of-spec brown-out setting, full flash, hand-wired headers. Next generation: a documented board with MCU-controlled Ethernet power and reset, or a bought controller (compare against buy options before designing).</td></tr>
+      <tr><td>The EPS product</td><td><span class="chip c-good">Keep</span></td><td>Its job is simple and the control layer is now well evidenced. What's missing is field evidence, which is cheap to get.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-next">
+  <h2 id="h-next">Next actions, cheapest decisive first</h2>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>Action</th><th>Decides</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Observation protocol for dead boxes (LEDs, walls lit?, switch port, photo, then <code>NET_LOG</code>), given to the technician and to customers</td><td>which mechanism the field actually has (link 6)</td><td>none</td></tr>
+      <tr><td class="num">2</td><td>Collect the v2.2 failure history per site (dates, boxes, DHCP or static, after power-on or during switching)</td><td>whether the pilot can show anything; the base rate</td><td>calls</td></tr>
+      <tr><td class="num">3</td><td>FriseH on <strong>its own COBI</strong> through the Netio: 50–100 cold starts plus 50 short cuts, with and without the 22 µF capacitor</td><td>whether a real supply triggers the fault on a susceptible board (link 4)</td><td>~2 h unattended</td></tr>
+      <tr><td class="num">4</td><td>Peak-MIN capture on the 10 V of a loaded box during POWER_ON</td><td>link 3 on site</td><td>a meter or a ~€100 USB scope</td></tr>
+      <tr><td class="num">5</td><td>Repeat the ramp test with the edge measured (scope, or timestamped readback) at 10–300 ms, on FriseH and two other boards</td><td>the real threshold; whether all boards are affected</td><td>bench half-day</td></tr>
+      <tr><td class="num">6</td><td>Continuity check: W5500 RSTn to the board RESET header</td><td>whether Test 0b really held the W5500 in reset</td><td>2 minutes, multimeter</td></tr>
+      <tr><td class="num">7</td><td>Commit the bench scripts; correct the report (1.0 A, hold-up), the pilot docs (capacitor) and the public supply-sag page</td><td>reproducibility, credibility</td><td>an hour</td></tr>
+      <tr><td class="num">8</td><td>Decide "restore after reboot" and brown-out 4.3 V as explicit product policy</td><td>what customers see after any power event</td><td>a decision</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Method of this review: every statement was checked against the repo's raw files (<code>data/</code>), the scripts that produced them, the firmware source and the photos. Where a document and its data disagree, the data wins. Statistics are exact binomial (Clopper–Pearson) and Fisher's exact test; the pilot power curve is Poisson. Datasheet facts: the Mean Well HDR-15/30 specification sheets; the COBI S-10-10 rating is from the unit's label (its hold-up and rise time are not published).</p>
+</section>
+</div>
+<div id="tip" role="tooltip"></div>
+<script>
+(function () {
+  var tip = document.getElementById('tip');
+  function show(el, x, y) {
+    var parts = (el.getAttribute('data-tip') || '').split('|');
+    tip.textContent = '';
+    var b = document.createElement('b'); b.textContent = parts[0] || ''; tip.appendChild(b);
+    if (parts[1]) tip.appendChild(document.createTextNode(parts[1]));
+    tip.style.display = 'block';
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x + 14)) + 'px';
+    tip.style.top = Math.max(8, Math.min(window.innerHeight - h - 8, y + 14)) + 'px';
+  }
+  function hide() { tip.style.display = 'none'; }
+  document.querySelectorAll('[data-tip]').forEach(function (el) {
+    el.addEventListener('pointermove', function (e) { show(el, e.clientX, e.clientY); });
+    el.addEventListener('pointerleave', hide);
+    el.addEventListener('focus', function () { var r = el.getBoundingClientRect(); show(el, r.left + 20, r.top + 10); });
+    el.addEventListener('blur', hide);
+  });
+})();
+</script>

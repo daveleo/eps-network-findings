@@ -4,7 +4,7 @@ status: active
 priority:
 version: 2026-10-28
 deadline:
-next: Supply-sag page now reflects bench Test 0 (power-path fix; reset supervisor ruled out). Update again after the on-site rail measurement and the power-path component validation (resuming next week), and after the v3.3 pilot.
+next: Push the evidence review + corrections once Dawid approves (public). Then update after the real-supply test on FriseH, the on-site 10 V measurement, and the v3.3 pilot.
 updated: 2026-10-28
 repo: daveleo/eps-network-findings
 url: https://daveleo.github.io/eps-network-findings/

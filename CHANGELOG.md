@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 (night) — evidence review page; supply-sag pages corrected
+- New `review.html` (start page lead): independent re-analysis of the whole EPS investigation. It covers the theory as a six-link chain with grades, bench outcomes with exact intervals, two method errors and a data correction (4 s judging window vs ~10 s v3.3 boot; the unmeasured "100 ms" ramp; the 0.9 s hold-up claim contradicted by the log), what each failure does to the LED walls, the fixes re-scored, the pilot's statistical power, product/UX findings, alternatives, verdicts and ranked next actions.
+- `supply-sag.html` / `supply-sag-da.html`: correction banner; titles changed from "root cause found" to "bench study".
+- Nav and index: "Evidence review" added first; the supply-sag cards are relabelled as a bench study under review.
+- `report.html`: report §3.1 (PSU is a COBI S-10-10, 1.0 A) and §5.15 (no ride-through at 0.22 s) corrected from the raw data.
+
 ## 2026-10-28 — supply-sag page corrected after bench Test 0 (reset supervisor ruled out)
 - `supply-sag.html` / `supply-sag-da.html`: updated to the post–Test 0 conclusion. The deaf fault is triggered by a **slow-rising supply edge**; firmware, the **reset line** (pulsing reset and holding it through the ramp) and the 22 µF capacitor were all tested and **none fix it** — the fault is independent of the reset line. The earlier **reset-supervisor recommendation is removed** and replaced by the **power-path fix** (a UVLO load switch for a clean, fast power-up; hold-up / decoupled supply as alternatives), with specific components still in bench validation. Running-sag rows reconciled (later controlled runs self-recover via a clean reboot); added the Test 0 / fast-transient / cap-A/B rows; corrected the ATmega 16 MHz spec note (≥ 4.5 V) and flagged that the board's own rails were not scoped on the bench.
 - `index.html`: lead card and lede updated to match; status 2026-10-28.

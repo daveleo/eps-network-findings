@@ -119,7 +119,7 @@ Bench work 2026-10-08 13:00 – 2026-10-12 morning · Repo <code>daveleo/EPS</co
 </tbody>
 </table></div>
 <p>Both boards are USB-powered from the PC; nothing is connected to the outputs.</p>
-<p><strong>Unit 3 (from 2026-10-09 ~12:30): a real EPS box</strong> as built for the field (photos in <code>photos/EPS 6 channel workshop built/</code>): KS0304 with v2.2, 10 V DIN PSU (1.8 A) soldered to the barrel jack, six KANE KSSR-14840DA SSRs on A0–A5, illuminated push-button on D2–D4 (RGB) and D6, <strong>22 µF between RESET and GND</strong> (added because the 10 V PSU didn't restart the board reliably; it also blocks USB flashing). MAC <code>8C:1F:64:C3:90:58</code>, M4250 port 0/9, USB unplugged, mains switched by a <strong>Netio PowerBOX 4KF</strong> (output 4, URL API). No loads on the outputs. Afternoon changes: unit 2 moved to 192.168.0.95; units 1–2 ran the v2.2 diagnostic builds, unit 1 v3.0 from ~15:15.</p>
+<p><strong>Unit 3 (from 2026-10-09 ~12:30): a real EPS box</strong> as built for the field (photos in <code>photos/EPS 6 channel workshop built/</code>): KS0304 with v2.2, 10 V DIN PSU (COBI electronic S-10-10, 10 V 1.0 A per its label; corrected 2026-10-28 from "1.8 A") soldered to the barrel jack, six KANE KSSR-14840DA SSRs on A0–A5, illuminated push-button on D2–D4 (RGB) and D6, <strong>22 µF between RESET and GND</strong> (added because the 10 V PSU didn't restart the board reliably; it also blocks USB flashing). MAC <code>8C:1F:64:C3:90:58</code>, M4250 port 0/9, USB unplugged, mains switched by a <strong>Netio PowerBOX 4KF</strong> (output 4, URL API). No loads on the outputs. Afternoon changes: unit 2 moved to 192.168.0.95; units 1–2 ran the v2.2 diagnostic builds, unit 1 v3.0 from ~15:15.</p>
 <h3>3.2 Network setups (chronological)</h3>
 <ol>
 <li><strong>Direct cable, "NovaHub"</strong> (generic USB2.0 10/100 adapter) → found to make the board deaf at 100 Mbps (§5.1); dropped.</li>
@@ -616,7 +616,7 @@ Bench work 2026-10-08 13:00 – 2026-10-12 morning · Repo <code>daveleo/EPS</co
 </tr>
 </tbody>
 </table></div>
-<p>The real box's supply holds the board ~0.9 s after a mains cut.</p>
+<p>Every cut, including the shortest (0.22 s), was followed by the same ~5.6 s to answer — a full reboot plus the switch's forwarding delay — so the box does <strong>not</strong> ride through even 0.22 s. <em>(Corrected 2026-10-28: this line earlier said the supply holds the board ~0.9 s; <code>data/m4250/events.csv</code> contradicts that. Cuts shorter than 0.22 s were never tested. See the evidence review.)</em></p>
 <h3>5.16 Switch-port flaps and the 13:05 event (2026-10-09 13:05–14:31) — Measured</h3>
 <div class="table-wrap"><table>
 <thead>

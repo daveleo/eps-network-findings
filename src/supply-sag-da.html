@@ -1,4 +1,4 @@
-<title>Spændingsdyk: Årsagen fundet</title>
+<title>Spændingsdyk: Bænkforsøg</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -61,7 +61,8 @@ td strong { font-weight: 600; }
 <div class="wrap">
 <header>
   <div class="eyebrow">Expromo EPS power sequencer · bænktest</div>
-  <h1>Spændingsdyk er udløseren — og det kræver en hardware-løsning</h1>
+  <div class="verdict" style="border-left-color:var(--warn)"><p><strong>Rettet 2026-10-28 af <a href="review.html" lang="en">evidensgennemgangen</a> (på engelsk).</strong> Resultatet med den langsomme opstart på denne boks står ved magt. Tre ting på siden holder ikke over for rådata:</p><ul style="margin:0;padding-left:1.15em;display:grid;gap:6px;max-width:82ch"><li>De to "dyk under drift → død"-resultater blev vurderet kun 4 s efter dykket. v3.3 svarer først efter ca. 10 s efter en genstart, og med 10 s ventetid genstartede alle 9 dyk bare.</li><li>"100 ms"-rampens reelle længde blev aldrig registreret. Den bestod af 20 verificerede Modbus-skrivninger og varede sandsynligvis 0,2–2 s.</li><li>At et netdyk på få millisekunder får 10 V-forsyningen til at falde, er aldrig målt.</li></ul><p>Læs siden som et <strong>bænkforsøg på én boks</strong>, ikke som en påvist årsag i felten.</p></div>
+  <h1>Spændingsdyk: hvad bænkforsøget viste på én boks</h1>
   <p class="lede">Feltfejlen (en enhed der holder op med at svare på netværket, indtil strømmen afbrydes) er nu genskabt på bænken med en programmerbar strømforsyning. Et dyk, der trækker printets 5 V-skinne ned i et smalt "ingenmandsland", efterlader Ethernet-chippen hængt — i live, men døv — indtil strømmen tages. Vi testede firmware, 22 µF reset-kondensatoren og printets reset-linje selv: <strong>ingen af dem løser det</strong>. Fejlen udløses af en <strong>langsomt stigende forsyningsflanke</strong> — en ren, hurtig opstart er altid i orden — så løsningen er en lille ændring på <strong>strømvejen</strong>, der sikrer, at printet kun nogensinde starter rent op. Konkrete komponenter er under bænkvalidering.</p>
   <p class="meta">Bænk, 2026-10-27 og 2026-10-28 (Test 0) · ét pilot-print (firmware v3.3), RuiDeng RD6006 laboratorieforsyning i stedet for 10 V-enheden · forsyningen styret og printet aflæst over netværket · hvert forsøg rapporteret</p>
 </header>
