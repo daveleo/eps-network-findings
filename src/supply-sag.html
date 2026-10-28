@@ -67,20 +67,20 @@ td strong { font-weight: 600; }
 <header>
   <div class="eyebrow">Expromo EPS power sequencer · bench investigation</div>
   <h1>Supply sag is the trigger — and it needs a hardware fix</h1>
-  <p class="lede">The field fault (a unit that stops answering the network until it is power-cycled) has now been reproduced on the bench with a programmable supply. A dip that pulls the board's 5 V rail into a narrow "no-man's-land" band leaves the Ethernet chip wedged — alive but deaf — until power is removed. We tested firmware, and we tested the original 22 µF reset capacitor: <strong>neither fixes it</strong>. The clean fix is a small hardware addition that resets the whole board whenever the supply leaves its safe range.</p>
-  <p class="meta">Bench, 2026-10-27 · one pilot box (firmware v3.3), RuiDeng RD6006 lab supply replacing the 10 V unit · supply controlled and the board read over the network · steps fixed before each run, every trial reported</p>
+  <p class="lede">The field fault (a unit that stops answering the network until it is power-cycled) has now been reproduced on the bench with a programmable supply. A dip that pulls the board's 5 V rail into a narrow "no-man's-land" band leaves the Ethernet chip wedged — alive but deaf — until power is removed. We tested firmware, the 22 µF reset capacitor, and the board's reset line itself: <strong>none of them fix it</strong>. The fault is set by a <strong>slow-rising supply edge</strong> — a clean, fast power-up is always fine — so the fix is a small change on the <strong>power path</strong> that guarantees the board only ever powers up cleanly. Specific components are in bench validation.</p>
+  <p class="meta">Bench, 2026-10-27 and 2026-10-28 (Test 0) · one pilot box (firmware v3.3), RuiDeng RD6006 lab supply replacing the 10 V unit · supply controlled and the board read over the network · every trial reported</p>
 </header>
 
 <section aria-labelledby="h-verdict">
   <h2 id="h-verdict">What we found</h2>
   <div class="verdict">
-    <p><strong>A supply sag into roughly 2.7–3.8 V on the 5 V rail puts the W5500 Ethernet chip into a "deaf" state that only a power cycle clears.</strong> Above that band the board rides through; a very deep, clean loss of power reboots it cleanly. The danger is the shallow dip that lands in between.</p>
+    <p><strong>A supply sag into roughly 2.7–3.8 V on the 5 V rail puts the W5500 Ethernet chip into a "deaf" state that only a power cycle clears.</strong> Above that band the board rides through; a very deep, clean loss of power reboots it cleanly. The danger is a slow rise or drift that lingers in between.</p>
     <p>This matches the field symptom exactly, and it matches the installation's wiring: the 10 V board supply shares its phase with solid-state relays that switch 30–40 switch-mode LED supplies each. The in-rush when those capacitor banks charge sags the shared phase at the very moment the box sequences its outputs on. <strong>The in-rush explanation is consistent with every bench result.</strong></p>
-    <p><strong>It cannot be fixed in firmware</strong> (the Ethernet chip's reset is on the shared board reset line, which software cannot drive, and a chip soft-reset does not clear the wedged state). <strong>The 22 µF reset capacitor does not fix it either.</strong> The fix is a reset-supervisor / power-good circuit, or decoupling the board's supply from the in-rush — see <a href="#h-fix">the hardware options</a>.</p>
+    <p><strong>It cannot be fixed in firmware, on the reset line, or with the capacitor.</strong> Bench Test 0 (2026-10-28) showed that pulsing the reset does not recover the wedged chip, that holding the board in reset through the whole power-up ramp does not prevent it, and that the 22 µF capacitor makes no difference — the fault is independent of the reset line. Only removing power clears it, and a clean, fast power-up always starts correctly. The fix is therefore on the <strong>power path</strong> — see <a href="#h-fix">the hardware options</a>.</p>
   </div>
   <div class="points">
     <div class="pt"><div class="n">2.7–3.8 V</div><div class="l">the rail band that wedges the chip: below the 3.8 V the CPU needs at 16 MHz, above the 2.7 V brown-out level that would force a clean reset.</div></div>
-    <div class="pt"><div class="n">≤ 4 V → dead</div><div class="l">a running dip to 4 V or below (input) left the board deaf; a dip to 5–6 V was ridden through. A sharp cliff.</div></div>
+    <div class="pt"><div class="n">slow rise → deaf</div><div class="l">a slow power-up ramp wedges it every time; an instant step to 10 V is 8/8 clean. A fast dip-and-recovery just reboots and self-recovers — the slow <em>rising</em> edge is what kills it.</div></div>
     <div class="pt"><div class="n">53 mA</div><div class="l">current the board draws while deaf, vs ~180 mA healthy: the CPU runs but the Ethernet chip is not working, and it never recovered on its own.</div></div>
   </div>
 </section>
@@ -112,7 +112,7 @@ td strong { font-weight: 600; }
       </g>
       <text x="60" y="108" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--muted)">0 V</text>
     </svg>
-    <figcaption>5 V rail thresholds. Values: brown-out fuse <code>BOD=2.7</code> (read by the firmware); ATmega328P needs ≥ 3.78 V at 16 MHz, W5500 ≥ 2.97 V; measured healthy rail 5.05–5.10 V. A dip that stops in the red band is the dangerous case.</figcaption>
+    <figcaption>5 V rail thresholds. Values: brown-out fuse <code>BOD=2.7</code> (read by the firmware); ATmega328P specified ≥ 4.5 V at 16 MHz (it may run a little lower), W5500 ≥ 2.97 V; measured healthy rail 5.05–5.10 V. A <em>slow</em> rise or drift that lingers in the red band is the dangerous case.</figcaption>
   </figure>
 </section>
 
@@ -157,35 +157,16 @@ td strong { font-weight: 600; }
 </section>
 
 <section aria-labelledby="h-run">
-  <h2 id="h-run">Test 2 — sag while running: the in-rush case</h2>
-  <p>This is the closer match to the field. With the board up and healthy, we briefly dipped the input to a target for about 1.5 s, then restored 10 V, and recorded what happened. There is a sharp cliff between a dip that is ridden through and one that kills the board.</p>
-  <figure class="fig">
-    <svg viewBox="0 0 700 220" role="img" aria-label="Running-sag outcomes by dip depth. Dip to 6 volts: rode through. Dip to 5 volts: rode through, one self-recovered link drop. Dip to 4 volts: went deaf, needed power cycle. Dip to 3.5 volts: went deaf.">
-      <g font-family="var(--font-mono)" font-size="12.5">
-        <!-- columns for 6,5,4,3.5 V -->
-        <!-- bars represent 'survived' height; green up, red down -->
-        <line x1="60" y1="150" x2="660" y2="150" stroke="var(--rule)"/>
-        <!-- 6.0 V -->
-        <rect x="95"  y="60" width="90" height="90" fill="var(--good)"/>
-        <text x="140" y="52" text-anchor="middle" fill="var(--good)" font-weight="600">rode through</text>
-        <text x="140" y="170" text-anchor="middle" fill="var(--ink)">dip to 6.0 V</text>
-        <!-- 5.0 V -->
-        <rect x="235" y="72" width="90" height="78" fill="var(--good)"/>
-        <text x="280" y="52" text-anchor="middle" fill="var(--good)" font-weight="600">rode through</text>
-        <text x="280" y="64" text-anchor="middle" fill="var(--warn)" font-size="11">1 link blip, recovered</text>
-        <text x="280" y="170" text-anchor="middle" fill="var(--ink)">dip to 5.0 V</text>
-        <!-- 4.0 V -->
-        <rect x="375" y="150" width="90" height="40" fill="var(--crit)"/>
-        <text x="420" y="206" text-anchor="middle" fill="var(--crit)" font-weight="600">DEAF</text>
-        <text x="420" y="142" text-anchor="middle" fill="var(--ink)">dip to 4.0 V</text>
-        <!-- 3.5 V -->
-        <rect x="515" y="150" width="90" height="40" fill="var(--crit)"/>
-        <text x="560" y="206" text-anchor="middle" fill="var(--crit)" font-weight="600">DEAF</text>
-        <text x="560" y="142" text-anchor="middle" fill="var(--ink)">dip to 3.5 V</text>
-      </g>
-    </svg>
-    <figcaption>Outcome of a ~1.5 s dip to each input level (firmware v3.3, 22 µF cap fitted). Up/green = kept serving the network; down/red = deaf until power-cycled. The board tolerates a dip to 5 V but not to 4 V — the rail has crossed into the danger band.</figcaption>
-  </figure>
+  <h2 id="h-run">Test 2 — it's the rising edge, not the dip</h2>
+  <p>Later, more controlled runs (2026-10-28, "Test 0") isolated what actually triggers the deaf state. The result is clear: the board is wedged by a slow <em>rise</em> of the rail through the danger band — not by how deep or how long a dip is. A dip that recovers quickly just brown-out reboots and comes back on its own.</p>
+  <div class="box" style="border-left:4px solid var(--crit);">
+    <h3>What decides it</h3>
+    <ul>
+      <li><strong>A fast dip to 4 V and straight back</strong> — any duration from near-zero up to ~0.8 s — simply brown-out reboots the board, which <strong>self-recovers</strong> in a few seconds. Depth and duration do not decide it.</li>
+      <li><strong>A slow rise of the rail through the danger band</strong> (the power-up ramp above) is what reliably leaves it deaf.</li>
+      <li><strong>Pulsing the reset line does not recover</strong> a wedged chip, and <strong>holding reset through the ramp does not prevent</strong> it (two trials each); the 22 µF capacitor makes no difference. The fault is on the power path, not the reset line.</li>
+    </ul>
+  </div>
   <figure class="fig">
     <svg viewBox="0 0 700 120" role="img" aria-label="Current draw: healthy about 180 milliamps, deaf about 53 milliamps.">
       <g font-family="var(--font-mono)" font-size="12.5">
@@ -206,7 +187,7 @@ td strong { font-weight: 600; }
 <section aria-labelledby="h-tests">
   <h2 id="h-tests">Every test, with the result</h2>
   <div class="tw"><table>
-    <thead><tr><th>Test (FriseH pilot box, 2026-10-27)</th><th>Result</th></tr></thead>
+    <thead><tr><th>Test (FriseH pilot box, 2026-10-27 / 10-28)</th><th>Result</th></tr></thead>
     <tbody>
       <tr><td>Power-up, instant step to 10 V</td><td><span class="chip c-good">8 / 8 came up</span></td></tr>
       <tr><td>Power-up, 100 ms rise</td><td><span class="chip c-crit">0 / 5 — deaf</span></td></tr>
@@ -215,8 +196,12 @@ td strong { font-weight: 600; }
       <tr><td>Power-up, slow ramp, <strong>firmware waits for a healthy rail</strong> (v3.3.1)</td><td><span class="chip c-crit">0 / 3 — deaf (no change)</span></td></tr>
       <tr><td>Running dip to 6 V, ~1.5 s</td><td><span class="chip c-good">rode through</span></td></tr>
       <tr><td>Running dip to 5 V, ~1.5 s</td><td><span class="chip c-good">rode through</span> <span class="chip c-warn">1 link drop, self-recovered</span></td></tr>
-      <tr><td>Running dip to 4 V, ~1.5 s</td><td><span class="chip c-crit">deaf — power cycle needed</span></td></tr>
-      <tr><td>Running dip to 3.5 V, ~1.5 s</td><td><span class="chip c-crit">deaf — power cycle needed</span></td></tr>
+      <tr><td>Running dip to 4 V, ~1.5 s</td><td><span class="chip c-warn">early run: deaf; later controlled runs: clean reboot, self-recovered</span></td></tr>
+      <tr><td>Running dip to 3.5 V, ~1.5 s</td><td><span class="chip c-warn">early run: deaf; later: clean reboot, self-recovered</span></td></tr>
+      <tr><td>Fast dip 10→4→10 V, 0–0.8 s (Test 0)</td><td><span class="chip c-good">clean reboot, self-recovered</span></td></tr>
+      <tr><td>Reset pulse on a wedged chip, power held (Test 0a)</td><td><span class="chip c-crit">no recovery</span></td></tr>
+      <tr><td>Reset held through the ramp, released at 10 V, ×2 (Test 0b)</td><td><span class="chip c-crit">still deaf</span></td></tr>
+      <tr><td>22 µF cap removed vs refitted (A/B)</td><td><span class="chip c-good">no difference</span></td></tr>
       <tr><td>Deaf-state current / self-recovery</td><td>~53 mA (vs ~180 mA healthy); <strong>no self-recovery in 60 s</strong></td></tr>
     </tbody>
   </table></div>
@@ -224,37 +209,45 @@ td strong { font-weight: 600; }
 </section>
 
 <section aria-labelledby="h-why">
-  <h2 id="h-why">Why firmware and the capacitor can't fix it</h2>
+  <h2 id="h-why">Why firmware, the reset line and the capacitor can't fix it</h2>
   <div class="two">
     <div class="box">
       <h3>Firmware can't</h3>
       <ul>
-        <li>The Ethernet chip's reset pin is wired to the board's shared reset line, which the processor cannot drive — so software cannot truly reset the chip.</li>
-        <li>A chip <em>soft</em>-reset over the internal bus does not clear this wedged state (the self-check already does that and still failed to recover it).</li>
-        <li>A firmware build that waits for a healthy rail before starting the chip made <strong>no difference</strong> (0/3): the chip still leaves reset during the ramp, on its own line.</li>
+        <li>A chip <em>soft</em>-reset over the internal bus does not clear the wedged state (the firmware self-check already does that and still cannot recover it).</li>
+        <li>A build that waits for a healthy rail before starting the chip made <strong>no difference</strong> (0/3).</li>
+        <li>Only removing the chip's power clears it — which firmware cannot do.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>The reset line can't</h3>
+      <ul>
+        <li>Test 0, power held: <strong>pulsing the reset</strong> (the button, and a direct short) rebooted the processor but did <strong>not</strong> bring the Ethernet chip back.</li>
+        <li><strong>Holding the board in reset</strong> through the whole power-up ramp and releasing at full voltage still came up deaf (two trials).</li>
+        <li>So a reset-supervisor on the board reset line — our earlier candidate — <strong>cannot</strong> fix this.</li>
       </ul>
     </div>
     <div class="box">
       <h3>The 22 µF capacitor can't</h3>
       <ul>
-        <li>It is a fixed delay on the reset line. It only helps a <em>fast</em> power-on, by holding reset through a rise of a few milliseconds.</li>
-        <li>On a slow ramp or a sag lasting tens of milliseconds or more, the delay is used up long before the rail is healthy, and the brown-out detector (2.7 V) lets the processor start into the danger band anyway.</li>
-        <li>Measured: with the cap fitted, the slow ramp was still <strong>0/3</strong>, and a running dip to 4 V still went deaf.</li>
+        <li>It is a fixed delay on the reset line; it only helps a <em>fast</em> power-on, by holding reset through a rise of a few milliseconds.</li>
+        <li>On a slow ramp the delay is used up long before the rail is healthy.</li>
+        <li>A direct A/B (cap removed vs refitted) made <strong>no difference</strong> to the slow-ramp deaf state or the running-dip reboot — so it is not the culprit, and it is kept (it is the USB reset capacitor).</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section aria-labelledby="h-fix">
-  <h2 id="h-fix">The hardware fix — options to reconsider</h2>
+  <h2 id="h-fix">The hardware fix</h2>
   <div class="box fix">
     <ol>
-      <li><strong>A reset-supervisor / power-good IC on the reset line (recommended).</strong> A small part (e.g. MCP809 / MCP130 / DS1813 class, ~4.5 V threshold) holds both the processor and the Ethernet chip in reset whenever the 5 V rail is below the threshold, and releases only once it is healthy — at <em>any</em> ramp speed. A sag then becomes an automatic clean reboot (the box restores its last state), instead of a dead unit. Unlike the bare capacitor it does not block USB programming.</li>
-      <li><strong>Hold-up energy, so the sag never reaches the board.</strong> A bulk capacitor — or a super-capacitor, or a small battery — behind a blocking diode on the board's 10 V input bridges the in-rush dip, keeping the rail up while the shared phase sags. This is the "large capacitor / battery" route: it is sound, and the size follows directly from how deep and how long the real sag is (which we should measure on site). A reset supervisor is still worth having as a backstop.</li>
-      <li><strong>Separate the board's supply from the in-rush.</strong> Feed the EPS board from a source that is not the same phase the output SSRs switch, so the in-rush cannot sag it. The cleanest root-cause fix where the wiring allows it.</li>
-      <li><strong>Future board revision:</strong> raise the brown-out level to 4.3 V (helps the processor, not the Ethernet chip on its own) and bring the Ethernet chip's reset out to a processor pin, so firmware can hard-reset it as a last resort.</li>
+      <li><strong>Guarantee a clean, fast power-up (the direction we are taking).</strong> A power-path undervoltage-lockout (UVLO) load switch keeps the board unpowered until the supply is solidly up, then connects it <em>hard</em> — so the board always sees the fast, clean start it needs (an instant step was 8/8). It also disconnects on a deep sag, so recovery is a clean reconnect rather than a slow drift through the danger band. A reset-supervisor on the reset line was tried and <strong>ruled out</strong> (Test 0).</li>
+      <li><strong>Hold up or decouple the supply.</strong> A blocking diode plus bulk energy on the board's input bridges a dip; or feed the board from a source that is not the same phase the output SSRs switch, so the in-rush cannot sag it. The cleanest root-cause route where the wiring allows it.</li>
+      <li><strong>Future board revision.</strong> Bring the Ethernet chip's power (or reset) under a dedicated control, so a clean power-cycle of the chip can be forced. This needs a board redesign.</li>
     </ol>
   </div>
+  <p class="meta">Specific components are in bench validation (continuing with different parts). The acceptance test: a clean network start on a slow power-up ramp, and clean recovery from a deep sag, on a modified unit — plus an on-site measurement of the real supply (below).</p>
 </section>
 
 <section aria-labelledby="h-inrush">
@@ -270,7 +263,7 @@ td strong { font-weight: 600; }
   <div class="box">
     <ul>
       <li>One pilot box, on the bench, with a lab supply standing in for the installed 10 V unit. The ramp and dip shapes are controlled approximations, not a recording of the real supply.</li>
-      <li>The rail thresholds (CPU 3.8 V, Ethernet chip 2.97 V, brown-out 2.7 V) are datasheet and fuse values; the deaf outcome and the current draw are measured on this board.</li>
+      <li>The rail thresholds are datasheet/fuse values (the ATmega is specified ≥ 4.5 V for 16 MHz per its speed grade; the W5500 ≥ 2.97 V; brown-out fuse 2.7 V). The board's own 5 V/3.3 V rails were not scoped on the bench, so the danger band is inferred from the input behaviour; the deaf outcome and current draw are measured.</li>
       <li>The field link — in-rush actually reaching the danger band on an installed system — is still to be measured on site.</li>
       <li>Firmware v3.3 remains worthwhile: it rides through shallow sags and recovers link drops by itself. It simply cannot rescue the deep-sag deaf state, which is a hardware limit of this board.</li>
     </ul>

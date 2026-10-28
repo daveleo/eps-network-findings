@@ -2,10 +2,10 @@
 name: EPS network findings (public site)
 status: active
 priority:
-version: 2026-10-12
+version: 2026-10-28
 deadline:
-next: Share comparison.html and the Danish brief with the product manager; update the pages (English and Danish) after the hands-on checks, real loads and pilot
-updated: 2026-10-12
+next: Supply-sag page now reflects bench Test 0 (power-path fix; reset supervisor ruled out). Update again after the on-site rail measurement and the power-path component validation (resuming next week), and after the v3.3 pilot.
+updated: 2026-10-28
 repo: daveleo/eps-network-findings
 url: https://daveleo.github.io/eps-network-findings/
 ---

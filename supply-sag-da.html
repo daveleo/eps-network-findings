@@ -71,20 +71,20 @@ td strong { font-weight: 600; }
 <header>
   <div class="eyebrow">Expromo EPS power sequencer · bænktest</div>
   <h1>Spændingsdyk er udløseren — og det kræver en hardware-løsning</h1>
-  <p class="lede">Feltfejlen (en enhed der holder op med at svare på netværket, indtil strømmen afbrydes) er nu genskabt på bænken med en programmerbar strømforsyning. Et dyk, der trækker printets 5 V-skinne ned i et smalt "ingenmandsland", efterlader Ethernet-chippen hængt — i live, men døv — indtil strømmen tages. Vi testede firmware, og vi testede den oprindelige 22 µF reset-kondensator: <strong>ingen af dem løser det</strong>. Den rene løsning er en lille hardware-tilføjelse, der nulstiller hele printet, hver gang forsyningen forlader sit sikre område.</p>
-  <p class="meta">Bænk, 2026-10-27 · ét pilot-print (firmware v3.3), RuiDeng RD6006 laboratorieforsyning i stedet for 10 V-enheden · forsyningen styret og printet aflæst over netværket · trin fastlagt før hver kørsel, hvert forsøg rapporteret</p>
+  <p class="lede">Feltfejlen (en enhed der holder op med at svare på netværket, indtil strømmen afbrydes) er nu genskabt på bænken med en programmerbar strømforsyning. Et dyk, der trækker printets 5 V-skinne ned i et smalt "ingenmandsland", efterlader Ethernet-chippen hængt — i live, men døv — indtil strømmen tages. Vi testede firmware, 22 µF reset-kondensatoren og printets reset-linje selv: <strong>ingen af dem løser det</strong>. Fejlen udløses af en <strong>langsomt stigende forsyningsflanke</strong> — en ren, hurtig opstart er altid i orden — så løsningen er en lille ændring på <strong>strømvejen</strong>, der sikrer, at printet kun nogensinde starter rent op. Konkrete komponenter er under bænkvalidering.</p>
+  <p class="meta">Bænk, 2026-10-27 og 2026-10-28 (Test 0) · ét pilot-print (firmware v3.3), RuiDeng RD6006 laboratorieforsyning i stedet for 10 V-enheden · forsyningen styret og printet aflæst over netværket · hvert forsøg rapporteret</p>
 </header>
 
 <section aria-labelledby="h-verdict">
   <h2 id="h-verdict">Hvad vi fandt</h2>
   <div class="verdict">
-    <p><strong>Et spændingsdyk ned i cirka 2,7–3,8 V på 5 V-skinnen sætter W5500 Ethernet-chippen i en "døv" tilstand, som kun en strømafbrydelse ophæver.</strong> Over det bånd klarer printet dykket; et meget dybt, rent strømtab genstarter det rent. Faren er det lave dyk, der lander midt imellem.</p>
+    <p><strong>Et spændingsdyk ned i cirka 2,7–3,8 V på 5 V-skinnen sætter W5500 Ethernet-chippen i en "døv" tilstand, som kun en strømafbrydelse ophæver.</strong> Over det bånd klarer printet dykket; et meget dybt, rent strømtab genstarter det rent. Faren er en langsom stigning eller drift, der dvæler midt imellem.</p>
     <p>Det passer præcist med feltsymptomet, og det passer med installationens opbygning: 10 V-forsyningen til printet deler fase med de SSR-relæer, der kobler 30–40 switch-mode LED-forsyninger hver. Indkoblingsstrømmen, når disse kondensatorbanker lades op, får den delte fase til at dykke netop i det øjeblik, boksen sekvenserer sine udgange til. <strong>Indkoblings-forklaringen er i overensstemmelse med alle bænkresultater.</strong></p>
-    <p><strong>Det kan ikke løses i firmware</strong> (Ethernet-chippens reset ligger på printets delte reset-linje, som software ikke kan styre, og en blød chip-reset ophæver ikke den hængte tilstand). <strong>Den 22 µF reset-kondensator løser det heller ikke.</strong> Løsningen er et reset-supervisor-/power-good-kredsløb, eller at afkoble printets forsyning fra indkoblingsstrømmen — se <a href="#h-fix">hardware-mulighederne</a>.</p>
+    <p><strong>Det kan ikke løses i firmware, på reset-linjen eller med kondensatoren.</strong> Bænk-Test 0 (2026-10-28) viste, at et reset-puls ikke genopretter den hængte chip, at det ikke forhindrer fejlen at holde printet i reset gennem hele opstartsrampen, og at 22 µF-kondensatoren ingen forskel gør — fejlen er uafhængig af reset-linjen. Kun at fjerne strømmen ophæver den, og en ren, hurtig opstart starter altid korrekt. Løsningen er derfor på <strong>strømvejen</strong> — se <a href="#h-fix">hardware-mulighederne</a>.</p>
   </div>
   <div class="points">
     <div class="pt"><div class="n">2,7–3,8 V</div><div class="l">det skinnebånd, der hænger chippen: under de 3,8 V, CPU'en kræver ved 16 MHz, og over de 2,7 V brown-out-niveau, der ville fremtvinge en ren reset.</div></div>
-    <div class="pt"><div class="n">≤ 4 V → død</div><div class="l">et dyk under drift til 4 V eller lavere (indgang) efterlod printet døvt; et dyk til 5–6 V blev klaret. En skarp kant.</div></div>
+    <div class="pt"><div class="n">langsom stigning → døv</div><div class="l">en langsom opstartsrampe hænger den hver gang; et øjeblikkeligt spring til 10 V er 8/8 rent. Et hurtigt dyk-og-genopretning genstarter blot og kommer til sig selv — det er den langsomt <em>stigende</em> flanke, der dræber den.</div></div>
     <div class="pt"><div class="n">53 mA</div><div class="l">strøm printet trækker mens det er døvt, mod ~180 mA sundt: CPU'en kører, men Ethernet-chippen virker ikke, og den kom aldrig til sig selv.</div></div>
   </div>
 </section>
@@ -113,7 +113,7 @@ td strong { font-weight: 600; }
       </g>
       <text x="60" y="108" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--muted)">0 V</text>
     </svg>
-    <figcaption>5 V-skinnens tærskler. Værdier: brown-out-sikring <code>BOD=2.7</code> (aflæst af firmwaren); ATmega328P kræver ≥ 3,78 V ved 16 MHz, W5500 ≥ 2,97 V; målt sund skinne 5,05–5,10 V. Et dyk, der stopper i det røde bånd, er det farlige tilfælde.</figcaption>
+    <figcaption>5 V-skinnens tærskler. Værdier: brown-out-sikring <code>BOD=2.7</code> (aflæst af firmwaren); ATmega328P er specificeret ≥ 4,5 V ved 16 MHz (den kan køre lidt lavere), W5500 ≥ 2,97 V; målt sund skinne 5,05–5,10 V. En <em>langsom</em> stigning eller drift, der dvæler i det røde bånd, er det farlige tilfælde.</figcaption>
   </figure>
 </section>
 
@@ -152,29 +152,16 @@ td strong { font-weight: 600; }
 </section>
 
 <section aria-labelledby="h-run">
-  <h2 id="h-run">Test 2 — dyk under drift: indkoblings-tilfældet</h2>
-  <p>Dette er det tætteste match på feltet. Med printet oppe og sundt dykkede vi kort indgangen til et mål i cirka 1,5 s, genoprettede så 10 V og registrerede, hvad der skete. Der er en skarp kant mellem et dyk, der klares, og et, der dræber printet.</p>
-  <figure class="fig">
-    <svg viewBox="0 0 700 220" role="img" aria-label="Resultater af dyk under drift efter dybde. Dyk til 6 volt: klarede det. Dyk til 5 volt: klarede det, ét selv-genoprettet linktab. Dyk til 4 volt: blev døv, krævede strømafbrydelse. Dyk til 3,5 volt: blev døv.">
-      <g font-family="var(--font-mono)" font-size="12.5">
-        <line x1="60" y1="150" x2="660" y2="150" stroke="var(--rule)"/>
-        <rect x="95"  y="60" width="90" height="90" fill="var(--good)"/>
-        <text x="140" y="52" text-anchor="middle" fill="var(--good)" font-weight="600">klarede det</text>
-        <text x="140" y="170" text-anchor="middle" fill="var(--ink)">dyk til 6,0 V</text>
-        <rect x="235" y="72" width="90" height="78" fill="var(--good)"/>
-        <text x="280" y="52" text-anchor="middle" fill="var(--good)" font-weight="600">klarede det</text>
-        <text x="280" y="64" text-anchor="middle" fill="var(--warn)" font-size="11">1 linktab, genoprettet</text>
-        <text x="280" y="170" text-anchor="middle" fill="var(--ink)">dyk til 5,0 V</text>
-        <rect x="375" y="150" width="90" height="40" fill="var(--crit)"/>
-        <text x="420" y="206" text-anchor="middle" fill="var(--crit)" font-weight="600">DØV</text>
-        <text x="420" y="142" text-anchor="middle" fill="var(--ink)">dyk til 4,0 V</text>
-        <rect x="515" y="150" width="90" height="40" fill="var(--crit)"/>
-        <text x="560" y="206" text-anchor="middle" fill="var(--crit)" font-weight="600">DØV</text>
-        <text x="560" y="142" text-anchor="middle" fill="var(--ink)">dyk til 3,5 V</text>
-      </g>
-    </svg>
-    <figcaption>Resultat af et ~1,5 s dyk til hvert indgangsniveau (firmware v3.3, 22 µF kondensator monteret). Op/grøn = fortsatte med at betjene netværket; ned/rød = døv indtil strømafbrydelse. Printet tåler et dyk til 5 V, men ikke til 4 V — skinnen er krydset ind i det farlige bånd.</figcaption>
-  </figure>
+  <h2 id="h-run">Test 2 — det er den stigende flanke, ikke dykket</h2>
+  <p>Senere, mere kontrollerede kørsler (2026-10-28, "Test 0") isolerede, hvad der faktisk udløser den døve tilstand. Resultatet er klart: printet hænges af en langsom <em>stigning</em> af skinnen gennem det farlige bånd — ikke af hvor dybt eller hvor længe et dyk er. Et dyk, der kommer sig hurtigt, genstarter blot (brown-out) og kommer op af sig selv.</p>
+  <div class="box" style="border-left:4px solid var(--crit);">
+    <h3>Hvad der afgør det</h3>
+    <ul>
+      <li><strong>Et hurtigt dyk til 4 V og direkte tilbage</strong> — uanset varighed fra nær-nul op til ~0,8 s — giver blot en brown-out-genstart, og printet <strong>kommer til sig selv</strong> på få sekunder. Dybde og varighed afgør det ikke.</li>
+      <li><strong>En langsom stigning af skinnen gennem det farlige bånd</strong> (opstartsrampen ovenfor) er det, der pålideligt efterlader den døv.</li>
+      <li><strong>Et reset-puls genopretter ikke</strong> en hængt chip, og <strong>at holde reset gennem rampen forhindrer det ikke</strong> (to forsøg hver); 22 µF-kondensatoren gør ingen forskel. Fejlen er på strømvejen, ikke reset-linjen.</li>
+    </ul>
+  </div>
   <figure class="fig">
     <svg viewBox="0 0 700 120" role="img" aria-label="Strømforbrug: sundt cirka 180 milliampere, døv cirka 53 milliampere.">
       <g font-family="var(--font-mono)" font-size="12.5">
@@ -195,7 +182,7 @@ td strong { font-weight: 600; }
 <section aria-labelledby="h-tests">
   <h2 id="h-tests">Alle test med resultat</h2>
   <div class="tw"><table>
-    <thead><tr><th>Test (FriseH pilot-boks, 2026-10-27)</th><th>Resultat</th></tr></thead>
+    <thead><tr><th>Test (FriseH pilot-boks, 2026-10-27 / 10-28)</th><th>Resultat</th></tr></thead>
     <tbody>
       <tr><td>Opstart, øjeblikkeligt spring til 10 V</td><td><span class="chip c-good">8 / 8 kom op</span></td></tr>
       <tr><td>Opstart, 100 ms stigning</td><td><span class="chip c-crit">0 / 5 — døv</span></td></tr>
@@ -204,8 +191,12 @@ td strong { font-weight: 600; }
       <tr><td>Opstart, langsom rampe, <strong>firmware venter på sund skinne</strong> (v3.3.1)</td><td><span class="chip c-crit">0 / 3 — døv (ingen ændring)</span></td></tr>
       <tr><td>Dyk under drift til 6 V, ~1,5 s</td><td><span class="chip c-good">klarede det</span></td></tr>
       <tr><td>Dyk under drift til 5 V, ~1,5 s</td><td><span class="chip c-good">klarede det</span> <span class="chip c-warn">1 linktab, selv-genoprettet</span></td></tr>
-      <tr><td>Dyk under drift til 4 V, ~1,5 s</td><td><span class="chip c-crit">døv — strømafbrydelse krævet</span></td></tr>
-      <tr><td>Dyk under drift til 3,5 V, ~1,5 s</td><td><span class="chip c-crit">døv — strømafbrydelse krævet</span></td></tr>
+      <tr><td>Dyk under drift til 4 V, ~1,5 s</td><td><span class="chip c-warn">tidlig kørsel: døv; senere kontrollerede kørsler: ren genstart, selv-genoprettet</span></td></tr>
+      <tr><td>Dyk under drift til 3,5 V, ~1,5 s</td><td><span class="chip c-warn">tidlig: døv; senere: ren genstart, selv-genoprettet</span></td></tr>
+      <tr><td>Hurtigt dyk 10→4→10 V, 0–0,8 s (Test 0)</td><td><span class="chip c-good">ren genstart, selv-genoprettet</span></td></tr>
+      <tr><td>Reset-puls på hængt chip, strøm på (Test 0a)</td><td><span class="chip c-crit">ingen genopretning</span></td></tr>
+      <tr><td>Reset holdt gennem rampen, sluppet ved 10 V, ×2 (Test 0b)</td><td><span class="chip c-crit">stadig døv</span></td></tr>
+      <tr><td>22 µF kond. fjernet mod genmonteret (A/B)</td><td><span class="chip c-good">ingen forskel</span></td></tr>
       <tr><td>Strøm i døv tilstand / selv-genopretning</td><td>~53 mA (mod ~180 mA sund); <strong>ingen selv-genopretning på 60 s</strong></td></tr>
     </tbody>
   </table></div>
@@ -213,37 +204,45 @@ td strong { font-weight: 600; }
 </section>
 
 <section aria-labelledby="h-why">
-  <h2 id="h-why">Hvorfor firmware og kondensatoren ikke kan løse det</h2>
+  <h2 id="h-why">Hvorfor firmware, reset-linjen og kondensatoren ikke kan løse det</h2>
   <div class="two">
     <div class="box">
       <h3>Firmware kan ikke</h3>
       <ul>
-        <li>Ethernet-chippens reset-ben er forbundet til printets delte reset-linje, som processoren ikke kan styre — så software kan ikke reelt nulstille chippen.</li>
-        <li>En <em>blød</em> chip-reset over den interne bus ophæver ikke denne hængte tilstand (selvtjekket gør netop det og genoprettede den stadig ikke).</li>
-        <li>En firmware-udgave, der venter på en sund skinne før chippen startes, gjorde <strong>ingen forskel</strong> (0/3): chippen forlader stadig reset under rampen, på sin egen linje.</li>
+        <li>En <em>blød</em> chip-reset over den interne bus ophæver ikke den hængte tilstand (firmwarens selvtjek gør netop det og kan stadig ikke genoprette den).</li>
+        <li>En udgave, der venter på en sund skinne før chippen startes, gjorde <strong>ingen forskel</strong> (0/3).</li>
+        <li>Kun at fjerne chippens strøm ophæver den — hvilket firmware ikke kan.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Reset-linjen kan ikke</h3>
+      <ul>
+        <li>Test 0, med strøm på: <strong>et reset-puls</strong> (knappen og en direkte kortslutning) genstartede processoren, men bragte <strong>ikke</strong> Ethernet-chippen tilbage.</li>
+        <li>At <strong>holde printet i reset</strong> gennem hele opstartsrampen og slippe ved fuld spænding kom stadig op døvt (to forsøg).</li>
+        <li>Så en reset-supervisor på printets reset-linje — vores tidligere kandidat — <strong>kan ikke</strong> løse det.</li>
       </ul>
     </div>
     <div class="box">
       <h3>22 µF-kondensatoren kan ikke</h3>
       <ul>
-        <li>Den er en fast forsinkelse på reset-linjen. Den hjælper kun ved en <em>hurtig</em> opstart, ved at holde reset gennem en stigning på få millisekunder.</li>
-        <li>Ved en langsom rampe eller et dyk på titusinder af millisekunder eller mere er forsinkelsen brugt op længe før skinnen er sund, og brown-out-detektoren (2,7 V) lader processoren starte ind i det farlige bånd alligevel.</li>
-        <li>Målt: med kondensatoren monteret var den langsomme rampe stadig <strong>0/3</strong>, og et dyk under drift til 4 V blev stadig døvt.</li>
+        <li>Den er en fast forsinkelse på reset-linjen; den hjælper kun ved en <em>hurtig</em> opstart, ved at holde reset gennem en stigning på få millisekunder.</li>
+        <li>Ved en langsom rampe er forsinkelsen brugt op længe før skinnen er sund.</li>
+        <li>En direkte A/B (kondensator fjernet mod genmonteret) gjorde <strong>ingen forskel</strong> på hverken den langsomme-rampe døve tilstand eller dyk-under-drift-genstarten — så den er ikke synderen, og den beholdes (det er USB-reset-kondensatoren).</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section aria-labelledby="h-fix">
-  <h2 id="h-fix">Hardware-løsningen — muligheder at genoverveje</h2>
+  <h2 id="h-fix">Hardware-løsningen</h2>
   <div class="box fix">
     <ol>
-      <li><strong>En reset-supervisor/power-good-IC på reset-linjen (anbefalet).</strong> En lille komponent (f.eks. MCP809 / MCP130 / DS1813-klassen, ~4,5 V tærskel) holder både processoren og Ethernet-chippen i reset, når 5 V-skinnen er under tærsklen, og slipper den først, når den er sund — ved <em>enhver</em> stigetid. Et dyk bliver så en automatisk ren genstart (boksen genskaber sin sidste tilstand) i stedet for en død enhed. I modsætning til den rene kondensator blokerer den ikke USB-programmering.</li>
-      <li><strong>Hold-up-energi, så dykket aldrig når printet.</strong> En bulk-kondensator — eller en super-kondensator, eller et lille batteri — bag en spærrediode på printets 10 V-indgang bygger bro over indkoblingsdykket og holder skinnen oppe, mens den delte fase dykker. Dette er "stor kondensator/batteri"-vejen: den er sund, og størrelsen følger direkte af, hvor dybt og hvor længe det virkelige dyk er (hvilket vi bør måle på stedet). En reset-supervisor er stadig værd at have som bagstopper.</li>
-      <li><strong>Adskil printets forsyning fra indkoblingsstrømmen.</strong> Forsyn EPS-printet fra en kilde, der ikke er samme fase, som udgangs-SSR'erne kobler, så indkoblingsstrømmen ikke kan få den til at dykke. Den reneste rodårsags-løsning, hvor ledningsføringen tillader det.</li>
-      <li><strong>Fremtidig print-revision:</strong> hæv brown-out-niveauet til 4,3 V (hjælper processoren, ikke Ethernet-chippen alene) og før Ethernet-chippens reset ud til et processor-ben, så firmware kan hard-reset'e den som sidste udvej.</li>
+      <li><strong>Sikr en ren, hurtig opstart (den vej vi går).</strong> En undervoltage-lockout (UVLO) load-switch på strømvejen holder printet uden strøm, indtil forsyningen er solidt oppe, og kobler det så <em>hårdt</em> til — så printet altid ser den hurtige, rene start, det har brug for (et øjeblikkeligt spring var 8/8). Den afbryder også ved et dybt dyk, så genopretning er en ren genindkobling frem for en langsom drift gennem det farlige bånd. En reset-supervisor på reset-linjen blev prøvet og <strong>udelukket</strong> (Test 0).</li>
+      <li><strong>Hold forsyningen oppe eller afkobl den.</strong> En spærrediode plus bulk-energi på printets indgang bygger bro over et dyk; eller forsyn printet fra en kilde, der ikke er samme fase, som udgangs-SSR'erne kobler, så indkoblingsstrømmen ikke kan få den til at dykke. Den reneste rodårsags-vej, hvor ledningsføringen tillader det.</li>
+      <li><strong>Fremtidig print-revision.</strong> Før Ethernet-chippens strøm (eller reset) under en dedikeret styring, så en ren strømcyklus af chippen kan fremtvinges. Dette kræver en print-redesign.</li>
     </ol>
   </div>
+  <p class="meta">Konkrete komponenter er under bænkvalidering (fortsætter med andre dele). Acceptkriteriet: en ren netværksopstart på en langsom opstartsrampe og ren genopretning fra et dybt dyk, på en ændret enhed — plus en måling på stedet af den virkelige forsyning (nedenfor).</p>
 </section>
 
 <section aria-labelledby="h-inrush">
@@ -259,7 +258,7 @@ td strong { font-weight: 600; }
   <div class="box">
     <ul>
       <li>Ét pilot-print, på bænken, med en laboratorieforsyning som stand-in for den installerede 10 V-enhed. Rampe- og dyk-formerne er styrede tilnærmelser, ikke en optagelse af den virkelige forsyning.</li>
-      <li>Skinnetærsklerne (CPU 3,8 V, Ethernet-chip 2,97 V, brown-out 2,7 V) er datablad- og sikringsværdier; det døve udfald og strømforbruget er målt på dette print.</li>
+      <li>Skinnetærsklerne er datablad-/sikringsværdier (ATmega er specificeret ≥ 4,5 V ved 16 MHz iflg. speed grade; W5500 ≥ 2,97 V; brown-out-sikring 2,7 V). Printets egne 5 V/3,3 V-skinner blev ikke oscilloskoperet på bænken, så det farlige bånd er udledt af indgangsadfærden; det døve udfald og strømforbruget er målt.</li>
       <li>Feltleddet — at indkoblingsstrøm faktisk når det farlige bånd på et installeret system — mangler stadig at blive målt på stedet.</li>
       <li>Firmware v3.3 er fortsat værdifuld: den klarer lave dyk og genopretter linktab af sig selv. Den kan blot ikke redde den dybe-dyk døve tilstand, som er en hardware-begrænsning på dette print.</li>
     </ul>

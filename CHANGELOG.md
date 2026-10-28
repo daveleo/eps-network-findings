@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-28 — supply-sag page corrected after bench Test 0 (reset supervisor ruled out)
+- `supply-sag.html` / `supply-sag-da.html`: updated to the post–Test 0 conclusion. The deaf fault is triggered by a **slow-rising supply edge**; firmware, the **reset line** (pulsing reset and holding it through the ramp) and the 22 µF capacitor were all tested and **none fix it** — the fault is independent of the reset line. The earlier **reset-supervisor recommendation is removed** and replaced by the **power-path fix** (a UVLO load switch for a clean, fast power-up; hold-up / decoupled supply as alternatives), with specific components still in bench validation. Running-sag rows reconciled (later controlled runs self-recover via a clean reboot); added the Test 0 / fast-transient / cap-A/B rows; corrected the ATmega 16 MHz spec note (≥ 4.5 V) and flagged that the board's own rails were not scoped on the bench.
+- `index.html`: lead card and lede updated to match; status 2026-10-28.
+
 ## 2026-10-12 — Danish pages; comparison tables wrap
 - New `hvorfor-v3-3.html` (dansk): short brief for the product manager: recommendation, three key numbers, the v2.2 problem, v2.2 → v3.3 table, why not v3.1/v3.2, what stays the same, caveats, next steps.
 - New `comparison-da.html`: Danish edition of `comparison.html`, same data (fault-matrix rows translated from the English page), links to the English pages.
