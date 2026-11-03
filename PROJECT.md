@@ -47,3 +47,8 @@ Updated 2026-10-12 (later): **Danish pages** `hvorfor-v3-3.html` (short brief fo
 - [x] 2026-10-11 — New page "Why v3.2 should be official" (decision brief, cross-linked); site now four documents, landing leads with it
 - [x] 2026-10-12 — v3.3: new pages "Why v3.3 should be official" and "All versions compared"; all pages bumped to v3.3; v3.2 brief kept
 - [x] 2026-10-12 — Danish pages: short brief for the product manager and the comparison in Danish; comparison tables wrap
+
+## Links
+
+- Live site: https://daveleo.github.io/eps-network-findings/
+- Source of the report page: [[projects/EPS/PROJECT|EPS firmware]] (`docs/report.md` via `tools/report_to_html.py`)
