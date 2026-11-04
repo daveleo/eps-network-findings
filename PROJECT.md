@@ -5,7 +5,7 @@ priority:
 version: 2026-10-28
 deadline:
 next: Push the evidence review + corrections once Dawid approves (public). Then update after the real-supply test on FriseH, the on-site 10 V measurement, and the v3.3 pilot.
-updated: 2026-10-28
+updated: 2026-11-04
 repo: daveleo/eps-network-findings
 url: https://daveleo.github.io/eps-network-findings/
 ---
